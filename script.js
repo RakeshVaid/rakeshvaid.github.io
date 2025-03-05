@@ -23,7 +23,7 @@ function showTab(tabName) {
 }
 
 // Set the initial active tab here
-const initialActiveTab = "news";
+const initialActiveTab = "home";
 showTab(initialActiveTab);
 
 // Get the "Read More" link and all list items
