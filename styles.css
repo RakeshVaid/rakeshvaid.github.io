@@ -59,6 +59,42 @@ header {
     transform: translateX(-50%);
 }
 
+.social-links-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    z-index: 10;
+    position: relative;
+}
+
+.social-links {
+    display: flex;
+    gap: 18px;
+}
+
+.social-links a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+
+.social-links a:hover {
+    background-color: #ddd; /* Slightly darker on hover */
+}
+
+.social-links i {
+    font-size: 20px;
+    color: inherit; /* Use default icon colors */
+}
+
 h1 {
     font-size: 30px;
     margin: 0;
@@ -76,6 +112,28 @@ h3 {
     color: #5c5b5b;
 }
 
+.collapsible-list {
+    list-style-type: disc;
+    padding-left: 20px;
+}
+
+.collapsible-list li {
+    margin-bottom: 5px;
+}
+
+.hidden {
+    display: none;
+}
+
+#read-more {
+    display: inline-block;
+    margin-top: 10px;
+    text-decoration: none;
+    color: rgb(0, 124, 213);
+    font-weight: bold;
+    cursor: pointer;
+}
+
 .project {
     display: flex;
     align-items: center;
@@ -86,6 +144,7 @@ h3 {
     width: 230px;
     height: 130px;
     margin-right: 20px;
+    border: 0.4px solid #575656;
 }
 
 .project-details {
@@ -119,7 +178,7 @@ a {
 nav {
     color: #ffffff;
     text-align: center;
-    padding-top: 120px;
+    padding-top: 130px;
     background-color: transparent;
 }
 
@@ -264,4 +323,144 @@ footer section {
 
 .click-icon:hover {
     color: #007bff;
+}
+
+@media screen and (max-width: 768px) {
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        position: relative;
+    }
+
+    .hamburger-menu {
+        display: block;
+        position: absolute;
+        left: 20px;
+        top: 15px;
+        font-size: 26px;
+        cursor: pointer;
+    }
+
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 50px;
+        left: 0;
+        right: 0;
+        background: white;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        padding: 10px 0;
+    }
+
+    .nav-links li {
+        display: block;
+        margin: 10px 0;
+    }
+
+    .nav-links.show {
+        display: flex;
+    }
+
+    .dark-mode .nav-links {
+        background: #181818;
+    }
+
+    .dark-mode .hamburger-menu {
+        color: white;
+    }
+
+    nav ul {
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
+    }
+
+    nav li {
+        display: block;
+        margin: 10px 0;
+    }
+
+    .grid-container {
+        grid-template-columns: repeat(1, 1fr);
+        gap: 10px;
+    }
+
+    .cover-photo-container {
+        height: 220px;
+    }
+
+    .cover-photo {
+        height: 220px;
+    }
+
+    .profile-picture {
+        width: 120px;
+        height: 120px;
+        bottom: -30px;
+    }
+
+    .profile-details {
+        margin-top: 40px;
+    }
+
+    .profile-details {
+        position: relative;
+        z-index: 10;
+        margin-top: 50px;
+        text-align: center;
+
+    }
+
+    .profile-details h2 {
+        font-size: 22px;
+    }
+
+    .profile-details p {
+
+        font-size: 14px;
+        margin-top: 10px;
+    }
+
+    body {
+        font-size: 14px;
+    }
+
+    .tab {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    #darkModeToggle {
+        top: 5px;
+        right: 10px;
+        font-size: 12px;
+    }
+
+    .project {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .project-thumbnail {
+        width: 100%;
+        height: auto;
+        max-width: 300px;
+    }
+
+    .footer-columns {
+        grid-template-columns: repeat(1, 1fr);
+        text-align: justify;
+        gap: 10px;
+    }
+
+    footer section {
+        padding-left: 0;
+        text-align: justify;
+        padding: 10px;
+    }
 }

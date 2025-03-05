@@ -26,6 +26,11 @@
     </script>
 
 </head>
+<!-- <link rel="icon" type="image/png" href="figures/favicon-16x16.png"> -->
+<link
+rel="icon"
+href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨🏻‍💻</text></svg>"
+/>
 
 <body>
     <div class="cover-photo-container">
@@ -33,13 +38,36 @@
         <img src="figures/savya.jpg" alt="Profile Picture" class="profile-picture">
         <div class="profile-details">
             <h2>Savya Khosla</h2>
-            <p>Ph.D. Student at UIUC</p>
+            <div class="social-links-container">
+                <div class="social-links">
+                    <a href="mailto:savyak2@illinois.edu">
+                        <i class="fa-regular fa-envelope"></i>
+                    </a>
+                    <a href="https://scholar.google.com/citations?user=c0ZJ6IgAAAAJ&hl=en" target="_blank">
+                        <i class="ai ai-google-scholar"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/in/savyakhosla/" target="_blank">
+                        <i class="fa-brands fa-linkedin-in"></i>
+                    </a>
+                    <a href="https://github.com/savya08" target="_blank">
+                        <i class="fa-brands fa-github"></i>
+                    </a>
+                    <a href="https://twitter.com/savyakhosla" target="_blank">
+                        <i class="fa-brands fa-x-twitter"></i>
+                    </a>
+                    <a href="CV.pdf">
+                        <i class="fas fa-file-alt"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
     <nav>
         <ul>
             <li><a href="#" class="tab active" onclick="showTab('home')">Home</a></li>
+            <li><a href="#" class="tab active" onclick="showTab('news')">News</a></li>
+            <li><a href="#" class="tab" onclick="showTab('experiences')">Experience</a></li>
             <li><a href="#" class="tab" onclick="showTab('research')">Research</a></li>
             <li><a href="#" class="tab" onclick="showTab('cv')">CV</a></li>
         </ul>
@@ -49,22 +77,72 @@
         <section id="home" class="tab-content">
             <p>
                 I am a first-year Ph.D. student at the University of Illinois Urbana-Champaign, 
-                advised by <a href="https://dhoiem.cs.illinois.edu/" target="_blank">Professor Derek Hoiem</a>
-                and <a href="https://www.alexander-schwing.de/" target="_blank">Professor Alexander Schwing</a>.
-                I am broadly interested in long-form video understanding and multimodal learning.
+                advised by <a href="https://dhoiem.cs.illinois.edu/" target="_blank">Professor Derek Hoiem</a> 
+                and <a href="https://www.alexander-schwing.de/" target="_blank">Professor Alexander Schwing</a>. 
+                Previously, I completed my Masters in Computer Science at UIUC and my Bachelors in Computer 
+                Engineering at Delhi Technological University.
+            </p>
+            
+            <p>
+                I am broadly interested in long-form video understanding and multimodal learning. More specifically, I have been 
+                working on
+                <ul>
+                    <li> Fine-grained retrieval from episodic memory </li>
+                    <li> Designing more efficient ways to represent visual data </li>
+                    <li> Unifying generation and representation learning in a single model </li>
+                    <li> Aligning and processing multiple modalities simultaneously </li>
+                </ul>
+            </p>
+            
+            <p>
+                During my MS, I had the opportunity to collaborate with <a href="https://jiasenlu.github.io/" target="_blank">Jiasen Lu</a> and 
+                <a href="https://sangho-vision.github.io/" target="_blank">Sangho Lee</a> at the Allen Institute for AI, 
+                where I worked on developing an autoregressive multimodal model capable of parsing and generating images, text, audio, 
+                and video. Prior to that, I collaborated with <a href="https://sites.google.com/view/alexmlamb" target="_blank">Alex Lamb</a> (Mila) 
+                and <a href="https://ml.comp.nus.edu.sg/kawaguchi" target="_blank">Kenji Kawaguchi</a> (NUS) on improving active learning 
+                for heteroskedastic distributions. Earlier, during an internship at Google India, I worked with 
+                <a href="https://parthatalukdar.github.io/" target="_blank">Partha Talukdar</a>'s group on training a multilingual language model 
+                for Indian languages.
             </p>
             <p>
-                My past research experiences involve collaborations at Adobe Research, Allen Institute 
-                for AI, National University of Singapore, Mila, and Google.
-                I have also briefly worked in engineering roles at Google and Cadence Design Systems.
+                If you are interested in collaborating, would like to discuss research, or have any question feel free to reach out to me 
+                at <a href="mailto:savyak2@illinois.edu">savyak2@illinois.edu</a>.
+            </p>
+        </section>
+
+        <section id="news" class="tab-content">
+            <ul class="collapsible-list">
+                <li class="show">[Feb 2025] &nbsp;&nbsp; <a href="https://arxiv.org/abs/2412.01826" target="_blank">RELOCATE</a> got accepted at CVPR 2025.</li>
+                <li class="show">[Jan 2025] &nbsp;&nbsp; Preprint of <a href="https://arxiv.org/abs/2501.08648" target="_blank">MAGNET</a> is out on arXiv.</li>
+                <li class="show">[Jan 2025] &nbsp;&nbsp; Preprint of <a href="https://arxiv.org/abs/2412.01826" target="_blank">RELOCATE</a> is out on arXiv.</li>
+                <li class="show">[May 2024] &nbsp;&nbsp; Started as a research intern at Adobe Research.</li>
+                <li class="show">[May 2024] &nbsp;&nbsp; Completed my MS in Computer Science from UIUC.</li>
+                <li class="show">[Apr 2024] &nbsp;&nbsp; Accepted a CS PhD offer from UIUC.</li>
+                <li class="show">[Feb 2024] &nbsp;&nbsp; <a href="https://unified-io-2.allenai.org/" target="_blank">Unified IO 2</a> got accepted at CVPR 2024.</li>
+                <li class="hidden">[May 2023] &nbsp;&nbsp; Started as a research intern at the Allen Institute for AI.</li>
+                <li class="hidden">[Oct 2022] &nbsp;&nbsp; Began collaborating with the Allen Institute for AI on Unified-IO 2.</li>
+                <li class="hidden">[Aug 2022] &nbsp;&nbsp; Started the thesis-track M.S. in Computer Science at the University of Illinois Urbana-Champaign.</li>
+            </ul>
+            
+            <a href="#" id="read-more">Read More</a>
+        </section>
+
+        <section id="experiences" class="tab-content" style="display: none;">
+            <p>
+                Hover over the logos to read more on what I worked on.
+            </p>
+            <p>
+                <b style="font-size: 1.07em;">Research</b><br>
+                I have been involved in a range of research projects, collaborating across both industry and academia. My work has focused on a broad array of topics, including multimodal learning, 
+                video understanding, natural language processing, active learning, and adversarial learning.
             </p>
             <div class="grid-container">
                 <div class="grid-item">
                     <img src="figures/adobe.png" alt="Adobe Research Logo">
-                    <p>Adobe Research</p>
+                    <p><b>Adobe Research</b></p>
                     <p>May 2024 - Aug 2024</p>
                     <div class="description">
-                        <li> Developed a method to simultaneously enhance LLMs with generative and representation 
+                        <li> Developed <a href="https://arxiv.org/abs/2501.08648" target="_blank">MAGNET</a> a method to simultaneously enhance LLMs with generative and representation 
                         learning capabilities </li>
                         <li> The enhanced LLMs can perform open-ended generation, text 
                         infilling, and token-level and sentence-level representation learning </li>
@@ -72,8 +150,8 @@
                 </div>
                 <div class="grid-item">
                     <img src="figures/ai2.png" alt="Allen Institute for AI Logo">
-                    <p>Allen Institute for AI</p>
-                    <p>Oct 2022 - Dec 2023</p>
+                    <p><b>Allen Institute for AI</b></p>
+                    <p>May 2023 - Aug 2023</p>
                     <div class="description">
                         <li> Contributed to <a href="https://unified-io-2.allenai.org/" target="_blank">Unified-IO 2</a>, 
                         an instruction-following model that can parse and generate multimodal data and perform 120+ tasks </li>
@@ -83,7 +161,7 @@
                 </div>
                 <div class="grid-item">
                     <img src="figures/nus.png" alt="NUS Logo">
-                    <p>National University of Singapore</p>
+                    <p><b>National University of Singapore</b></p>
                     <p>Apr 2022 - Aug 2022</p>
                     <div class="description">
                         <li> Developed robust <a href="https://arxiv.org/pdf/2211.00928" target="_blank">active learning algorithm for handling heteroskedastic noise</a>, 
@@ -94,7 +172,7 @@
                 </div>
                 <div class="grid-item">
                     <img src="figures/mila.png" alt="Mila Logo">
-                    <p>Mila</p>
+                    <p><b>Mila</b></p>
                     <p>Apr 2021 - Nov 2021</p>
                     <div class="description">
                         <li> Demonstrated <a href="https://openreview.net/forum?id=6Mfsc-BYp2d" target="_blank">catastrophic failure of uncertainty-based active learning algorithms</a> 
@@ -105,7 +183,7 @@
                 </div>
                 <div class="grid-item">
                     <img src="figures/dtu.png" alt="DTU Logo">
-                    <p>Delhi Technological University</p>
+                    <p><b>Delhi Technological University</b></p>
                     <p>Apr 2021 - Nov 2021</p>
                     <div class="description">
                         <li> Leveraged image-based malware binary representations and techniques like ensembling and autoencoding to develop 
@@ -116,7 +194,7 @@
                 </div>
                 <div class="grid-item">
                     <img src="figures/google.png" alt="Google Logo">
-                    <p>Google</p>
+                    <p><b>Google</b></p>
                     <p>May 2020 - Jul 2020</p>
                     <div class="description">
                         <li> Initiated the development of <a href="https://economictimes.indiatimes.com/tech/technology/google-aims-to-help-researchers-startups-better-understand-indian-languages/articleshow/79773091.cms" target="_blank">MuRIL</a>, 
@@ -125,7 +203,67 @@
                     </div>
                 </div>
             </div>
+            <br><br>
+            <p>
+                <b style="font-size: 1.07em;">Teaching</b><br>
+                I have worked as a teaching assistant, where I was responsible for teaching labs, conducting office hours, grading tests, 
+                and mentoring group projects.
             </p>
+            <div class="grid-container">
+                <div class="grid-item">
+                    <img src="figures/uiuc.png" alt="UIUC Logo">
+                    <p><b>CS 445: Computational Photography</b></p>
+                    <p>Fall 2023</p>
+                    <div class="description">
+                        <li> Contributed to <a href="https://unified-io-2.allenai.org/" target="_blank">Unified-IO 2</a>, 
+                        an instruction-following model that can parse and generate multimodal data and perform 120+ tasks </li>
+                        <li> Worked on a memory-augmented multimodal encoder for understanding videos ranging from a 
+                        few seconds to tens of minutes </li>
+                    </div>
+                </div>
+                <div class="grid-item">
+                    <img src="figures/uiuc.png" alt="UIUC Logo">
+                    <p><b>CS 225: Data Structures and Algorithms</b></p>
+                    <p>Fall 2022 and Spring 2023</p>
+                    <div class="description">
+                        <li> Developed a method to simultaneously enhance LLMs with generative and representation 
+                        learning capabilities </li>
+                        <li> The enhanced LLMs can perform open-ended generation, text 
+                        infilling, and token-level and sentence-level representation learning </li>
+                    </div>
+                </div>
+            </div>
+
+            <br><br>
+            <p>
+                <b style="font-size: 1.07em;">Engineering</b><br>
+                I have also worked briefly in software engineering roles (which helped me realize that while I love coding, my 
+                true passion lies in research).
+            </p>
+            <div class="grid-container">
+                <div class="grid-item">
+                    <img src="figures/google.png" alt="Google Logo">
+                    <p><b>Google</b></p>
+                    <p>Aug 2021 - Mar 2022</p>
+                    <div class="description">
+                        <li> Improved Google Search’s web ranking infrastructure using deep learning for better multimodal 
+                        document understanding </li>
+                        <li> Enhanced precision and recall in salient entity extraction from webpages by transitioning 
+                        from traditional ML methods to LLMs </li>
+                    </div>
+                </div>
+                <div class="grid-item">
+                    <img src="figures/cadence.png" alt="Cadence Logo">
+                    <p><b>Cadence Design Systems</b></p>
+                    <p>Dec 2018 - Jan 2019</p>
+                    <div class="description">
+                        <li> Developed a unified functionality interface for two version control systems
+                        - Perforce and ClearCase </li>
+                        <li> Implemented a functionality to streamline complex multi-step process of fetching file revisions 
+                        from the two version control systems using a single bash command </li>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section id="research" class="tab-content" style="display: none;">
@@ -150,7 +288,26 @@
                         <u>Savya Khosla</u>, Sethuraman T V, Alexander Schwing, and Derek Hoiem
                     </p>
                     <p class="pub-venue">
-                        arXiv, 2024
+                        Computer Vision and Pattern Recognition, 2025
+                    </p>
+                </div>
+            </div>
+
+            <!-- Publication -->
+            <div class="project">
+                <img src="figures/magnet.png" alt="Project MAGNET" class="project-thumbnail">
+                <div class="project-details">
+                    <p class="pub-title" style="color:#007CD5">
+                        
+                    </p>
+                    <p class="pub-title">
+                        <a href="https://arxiv.org/abs/2501.08648" target="_blank">MAGNET: Augmenting Generative Decoders with Representation Learning and Infilling Capabilities</a> 
+                    </p>
+                    <p class="pub-authors">
+                        <u>Savya Khosla</u>, Aditi Tiwari, Kushal Kafle, Simon Jenni, Handong Zhao, John Collomosse, and Jing Shi
+                    </p>
+                    <p class="pub-venue">
+                        arXiv, 2025
                     </p>
                 </div>
             </div>
