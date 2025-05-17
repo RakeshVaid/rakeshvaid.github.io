@@ -112,13 +112,15 @@ h3 {
     color: #5c5b5b;
 }
 
-.collapsible-list {
-    list-style-type: disc;
-    padding-left: 20px;
-}
-
 .collapsible-list li {
-    margin-bottom: 5px;
+    list-style-type: disc;
+    line-height: 1.6;
+}
+  
+.collapsible-list .date {
+    display: inline-block;
+    min-width: 100px;
+    white-space: nowrap;
 }
 
 .hidden {
