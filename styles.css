@@ -465,4 +465,22 @@ footer section {
         text-align: justify;
         padding: 10px;
     }
+
+    .footer-bottom {
+    text-align: center;
+    font-size: 14px;
+    margin-top: 20px;
+    padding: 10px 0;
+    color: #5c5b5b;
+    }
+
+    .footer-bottom a {
+        color: #007CD5;
+        text-decoration: none;
+    }
+
+    .footer-bottom a:hover {
+        text-decoration: underline;
+    }
+
 }
