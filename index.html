@@ -324,16 +324,24 @@
             position: relative;
         }
 
-        .tour-sections.color-bleed::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -3px;
+        .scroll-glow-bar {
+            position: fixed;
+            top: 48px;
+            left: calc(36vw - 2px);
             width: 3px;
-            height: calc(var(--scroll-progress, 0) * 100%);
-            background: var(--bleed-color, transparent);
-            transition: height 0.1s linear;
-            box-shadow: 0 0 8px var(--bleed-color, transparent);
+            height: 0;
+            z-index: 55;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .scroll-glow-bar.visible {
+            opacity: 1;
+        }
+
+        @media (max-width: 900px) {
+            .scroll-glow-bar { display: none; }
         }
 
         @media (max-width: 900px) {
@@ -351,7 +359,7 @@
 
         /* === SECTIONS === */
         .section {
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             padding: 5rem 3rem 3rem 2.5rem;
@@ -398,48 +406,16 @@
 
         .section-body {
             flex: 1;
-            min-height: 0;
-            overflow-y: hidden;
             padding-right: 1rem;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255,255,255,0.08) transparent;
-            transition: overflow 0s;
         }
 
-        .section.scroll-enabled .section-body {
-            overflow-y: auto;
-        }
-
-        .section-body::-webkit-scrollbar { width: 4px; }
-        .section-body::-webkit-scrollbar-track { background: transparent; }
-        .section-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-        .section::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: linear-gradient(to bottom, transparent, var(--bg));
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .section.active.has-overflow::after {
-            opacity: 1;
-        }
-
-        .section.active.has-overflow.scrolled-bottom::after {
-            opacity: 0;
-        }
+        
 
         /* === CUBE LABEL === */
         .cube-label {
             position: fixed;
             left: 0;
-            width: 42vw;
+            width: 36vw;
             top: 22vh;
             z-index: 10;
             text-align: center;
@@ -803,6 +779,7 @@
     </div>
 
     <nav class="progress-track" id="progress-track"></nav>
+    <div class="scroll-glow-bar" id="scroll-glow-bar"></div>
 
     <footer class="site-footer">
         <span id="site-footer-text"></span>
@@ -1099,18 +1076,6 @@
             const steps = document.querySelectorAll('.progress-step');
             const landing = document.getElementById('landing');
 
-            setTimeout(() => {
-                sections.forEach(sec => {
-                    const body = sec.querySelector('.section-body');
-                    if (body && body.scrollHeight > body.clientHeight + 30) {
-                        sec.classList.add('has-overflow');
-                        body.addEventListener('scroll', () => {
-                            const atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 10;
-                            sec.classList.toggle('scrolled-bottom', atBottom);
-                        });
-                    }
-                });
-            }, 100);
 
             // Progress clicks
             steps.forEach(step => {
@@ -1160,6 +1125,13 @@
                         tourSectionsEl.classList.add('color-bleed');
                         tourSectionsEl.style.setProperty('--bleed-color', FACE_CSS_RAW_COLORS[face] || 'transparent');
 
+                        // Update glow bar color
+                        const bar = document.getElementById('scroll-glow-bar');
+                        const color = FACE_CSS_RAW_COLORS[face] || 'transparent';
+                        bar.style.background = color;
+                        bar.style.boxShadow = '0 0 8px ' + color;
+                        bar.style.height = '0px';
+
                         // Update face nav
                         if (inTourMode) updateFaceLines(face);
 
@@ -1170,7 +1142,7 @@
                         document.querySelector('.site-footer').classList.toggle('visible', idx === sections.length - 1);
                     }
                 });
-            }, { threshold: 0.15, rootMargin: '-20% 0px -50% 0px' });
+            }, { threshold: 0, rootMargin: '-30% 0px -60% 0px' });
 
             sections.forEach(s => sectionObserver.observe(s));
         }
@@ -1217,7 +1189,6 @@
                 // Clear color bleed
                 document.getElementById('tour-sections').classList.remove('color-bleed');
                 document.getElementById('tour-sections').style.removeProperty('--bleed-color');
-                document.getElementById('tour-sections').style.removeProperty('--scroll-progress');
 
                 // Reset camera to landing position
                 camera.position.set(CUBE_LANDING.x, CUBE_LANDING.y, CUBE_LANDING.z);
@@ -1265,21 +1236,23 @@
                 }
             }
 
-            sections.forEach(sec => {
-                const rect = sec.getBoundingClientRect();
-                const aligned = rect.top <= 49;
-                sec.classList.toggle('scroll-enabled', sec.classList.contains('active') && aligned);
-            });
-
-            // Scroll progress on color bleed border
+            // Scroll glow bar
+            const glowBar = document.getElementById('scroll-glow-bar');
             if (inTour) {
+                glowBar.classList.add('visible');
                 const activeSec = document.querySelector('.section.active');
                 if (activeSec) {
                     const rect = activeSec.getBoundingClientRect();
                     const sectionH = activeSec.offsetHeight;
-                    const progress = Math.max(0, Math.min(1, -rect.top / (sectionH - window.innerHeight)));
-                    document.getElementById('tour-sections').style.setProperty('--scroll-progress', progress);
+                    const viewH = window.innerHeight;
+                    const maxScroll = sectionH - viewH;
+                    const progress = maxScroll > 0 ? Math.max(0, Math.min(1, -rect.top / maxScroll)) : 1;
+                    const barHeight = progress * (viewH - 48);
+                    glowBar.style.height = barHeight + 'px';
                 }
+            } else {
+                glowBar.classList.remove('visible');
+                glowBar.style.height = '0px';
             }
         }
 
