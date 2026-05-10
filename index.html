@@ -342,6 +342,11 @@
                 border-left: none;
                 padding-top: 0;
             }
+            #cube-canvas.mobile-hidden {
+                opacity: 0 !important;
+                pointer-events: none !important;
+                transition: opacity 0.6s ease;
+            }
         }
 
         /* === SECTIONS === */
@@ -360,7 +365,7 @@
         .section + .section { border-top: 1px solid var(--border); }
 
         @media (max-width: 900px) {
-            .section { padding: 4rem 1.5rem 2rem; }
+            .section { padding: 4rem 1.5rem 3.5rem; }
         }
 
         .section-label {
@@ -588,6 +593,25 @@
 
         .progress-connector { width: 1px; height: 14px; background: var(--border); }
 
+        @media (max-width: 900px) {
+            .progress-track {
+                top: auto;
+                bottom: 1rem;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                flex-direction: row;
+                gap: 4px;
+            }
+            .progress-connector { width: 14px; height: 1px; }
+            .progress-step::after {
+                top: auto;
+                bottom: calc(100% + 8px);
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+
         /* === SECTION COLOR THEMING === */
         .section {
             --section-accent: var(--c-white);
@@ -715,6 +739,9 @@
             opacity: 0;
             transition: opacity 0.4s ease;
             pointer-events: none;
+        }
+        @media (max-width: 900px) {
+            .site-footer { left: 0; bottom: 3rem; }
         }
         .site-footer.visible {
             opacity: 1;
@@ -1164,7 +1191,7 @@
 
             // Interpolate camera position: zoom out and shift right so cube appears left
             const camZ = CUBE_LANDING.z + (CUBE_TOUR.z - CUBE_LANDING.z) * t;
-            const camX = 5.0 * t;
+            const camX = (5.0 * camera.aspect / 1.6) * t; // normalized to typical 16:10 aspect
 
             if (t > 0) {
                 camera.position.x = camX;
@@ -1227,6 +1254,7 @@
             header.classList.toggle('visible', inTour);
             progress.classList.toggle('visible', inTour);
             document.getElementById('cube-label').classList.toggle('visible', inTour);
+            document.getElementById('cube-canvas').classList.toggle('mobile-hidden', scrollY > landingBottom - window.innerHeight * 0.5);
             if (!inTour) {
                 hideFaceLines();
             } else if (leftLines.length > 0 && !leftLines[0].visible) {
@@ -1860,6 +1888,8 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            // Re-trigger scroll positioning for new dimensions
+            window.dispatchEvent(new Event('scroll'));
         }
 
         // === PARTICLES ===
@@ -1867,7 +1897,7 @@
             const canvas = document.getElementById('particle-canvas');
             const ctx = canvas.getContext('2d');
             let particles = [];
-            const PARTICLE_COUNT = 800;
+            const PARTICLE_COUNT = window.innerWidth <= 900 ? 200 : 800;
             const colors = ['#3b82f6', '#22c55e', '#f97316', '#ef4444', '#eab308', '#e4e4e7'];
             let w = 0, h = 0;
 
