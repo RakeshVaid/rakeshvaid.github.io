@@ -1,422 +1,1953 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <meta name="author" content="Rakesh Vaideeswaran" />
-    <meta name="keywords" content="Rakesh Vaideeswaran, Amazon, Nova, Foundation Models, AGI, UIUC, Resume, Machine Learning, Deep Learning, Computer Vision, Natural Language Processing, Multimodal Learning" />
-    <meta name="robots" content="index" />
-    <meta name="revisit-after" content="14 days" />
-
     <title>Rakesh Vaideeswaran</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
 
-   <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-H03KWHW1K3"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-H03KWHW1K3');
-    </script>
+    <script src="data.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
-    <link rel="icon" href="figures/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0a0b;
+            --surface: #111113;
+            --surface-raised: #18181b;
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.14);
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
+            --text-muted: #52525b;
+
+            --c-green: #22c55e;
+            --c-red: #ef4444;
+            --c-blue: #3b82f6;
+            --c-orange: #f97316;
+            --c-white: #e4e4e7;
+            --c-yellow: #eab308;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.1) transparent;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* === CANVAS (single, fixed) === */
+        #cube-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            transition: pointer-events 0s;
+        }
+
+        #cube-canvas.interactive {
+            pointer-events: auto;
+        }
+
+        #cube-canvas.clickable {
+            pointer-events: none;
+        }
+
+        #cube-click-overlay {
+            position: fixed;
+            top: 48px;
+            left: 0;
+            width: 36vw;
+            bottom: 0;
+            z-index: 50;
+            cursor: pointer;
+            display: none;
+        }
+
+        #cube-click-overlay.active {
+            display: block;
+        }
+
+        #cube-hover-tooltip {
+            position: fixed;
+            z-index: 55;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            background: var(--surface);
+            border: 1px solid var(--border-hover);
+            padding: 0.35rem 0.6rem;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            white-space: nowrap;
+        }
+
+        #cube-hover-tooltip.visible {
+            opacity: 1;
+        }
+
+        /* === CUBE FACE NAV (cross projection) === */
+        .face-nav {
+            position: fixed;
+            left: calc(18vw - 60px);
+            bottom: 3rem;
+            z-index: 55;
+            display: none;
+            grid-template-columns: 28px 28px 28px;
+            grid-template-rows: 28px 28px 28px;
+            gap: 3px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .face-nav.visible {
+            display: grid;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 900px) {
+            .face-nav { display: none !important; }
+        }
+
+        /* === LANDING === */
+        .landing {
+            position: relative;
+            height: 100vh;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 10vh;
+            z-index: 5;
+        }
+
+        .landing-bg {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 50% 35%, rgba(59,130,246,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 25% 60%, rgba(34,197,94,0.03) 0%, transparent 40%),
+                radial-gradient(ellipse at 75% 50%, rgba(249,115,22,0.03) 0%, transparent 40%);
+            z-index: -1;
+        }
+
+        /* Floating orbs */
+        .landing-orbs {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0;
+            animation: orbFloat 20s ease-in-out infinite, orbFadeIn 2s ease forwards;
+        }
+
+        .orb-1 {
+            width: 300px; height: 300px;
+            background: var(--c-blue);
+            top: 15%; left: 10%;
+            opacity: 0;
+            animation-delay: 0.5s, 0.5s;
+            animation-duration: 22s, 2s;
+        }
+        .orb-2 {
+            width: 250px; height: 250px;
+            background: var(--c-green);
+            top: 55%; right: 8%;
+            animation-delay: 1s, 1s;
+            animation-duration: 18s, 2s;
+        }
+        .orb-3 {
+            width: 200px; height: 200px;
+            background: var(--c-orange);
+            bottom: 20%; left: 25%;
+            animation-delay: 1.5s, 1.5s;
+            animation-duration: 25s, 2s;
+        }
+        .orb-4 {
+            width: 180px; height: 180px;
+            background: var(--c-red);
+            top: 30%; right: 20%;
+            animation-delay: 2s, 2s;
+            animation-duration: 20s, 2s;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -20px) scale(1.05); }
+            50% { transform: translate(-20px, 30px) scale(0.95); }
+            75% { transform: translate(20px, 15px) scale(1.02); }
+        }
+
+        @keyframes orbFadeIn {
+            from { opacity: 0; }
+            to { opacity: 0.06; }
+        }
+
+        .landing-particles {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Subtle grid */
+        .landing-grid {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 45%, black 20%, transparent 70%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 45%, black 20%, transparent 70%);
+        }
+
+        .landing-content {
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .landing-name {
+            font-size: clamp(1.6rem, 4vw, 2.8rem);
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1.1;
+            opacity: 0;
+            animation: fadeUp 0.8s ease forwards 0.6s;
+        }
+
+        .landing-role {
+            margin-top: 0.6rem;
+            font-size: clamp(0.72rem, 1.3vw, 0.82rem);
+            font-weight: 400;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            opacity: 0;
+            animation: fadeUp 0.7s ease forwards 0.9s;
+        }
+
+        .landing-scroll-cue {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 0.8s;
+            transition: opacity 0.4s ease;
+        }
+
+        .landing-scroll-cue.hide {
+            animation: none;
+            opacity: 0 !important;
+        }
+
+        .scroll-cue-text {
+            font-size: 0.8rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .scroll-cue-arrow {
+            width: 20px;
+            height: 20px;
+            border-right: 1.5px solid var(--text-tertiary);
+            border-bottom: 1.5px solid var(--text-tertiary);
+            transform: rotate(45deg);
+            animation: bounceDown 2s ease-in-out infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes bounceDown {
+            0%, 100% { transform: rotate(45deg) translate(0, 0); opacity: 0.7; }
+            50% { transform: rotate(45deg) translate(4px, 4px); opacity: 1; }
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* === TOUR LAYOUT === */
+        .tour {
+            position: relative;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .tour-sections {
+            margin-left: 36vw;
+            border-left: 3px solid var(--border);
+            transition: border-color 0.6s ease;
+            pointer-events: auto;
+        }
+
+        .tour-sections.color-bleed {
+            border-color: var(--border);
+            box-shadow: -8px 0 30px -10px var(--bleed-color, transparent);
+            position: relative;
+        }
+
+        .tour-sections.color-bleed::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -3px;
+            width: 3px;
+            height: calc(var(--scroll-progress, 0) * 100%);
+            background: var(--bleed-color, transparent);
+            transition: height 0.1s linear;
+            box-shadow: 0 0 8px var(--bleed-color, transparent);
+        }
+
+        @media (max-width: 900px) {
+            .tour-sections {
+                margin-left: 0;
+                border-left: none;
+                padding-top: 0;
+            }
+        }
+
+        /* === SECTIONS === */
+        .section {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 5rem 3rem 3rem 2.5rem;
+            position: relative;
+            opacity: 0.25;
+            transition: opacity 0.5s ease;
+        }
+
+        .section.active { opacity: 1; }
+
+        .section + .section { border-top: 1px solid var(--border); }
+
+        @media (max-width: 900px) {
+            .section { padding: 4rem 1.5rem 2rem; }
+        }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 400;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-shrink: 0;
+        }
+
+        .section-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .section-title {
+            font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .section-body {
+            flex: 1;
+            min-height: 0;
+            overflow-y: hidden;
+            padding-right: 1rem;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.08) transparent;
+            transition: overflow 0s;
+        }
+
+        .section.scroll-enabled .section-body {
+            overflow-y: auto;
+        }
+
+        .section-body::-webkit-scrollbar { width: 4px; }
+        .section-body::-webkit-scrollbar-track { background: transparent; }
+        .section-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        .section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to bottom, transparent, var(--bg));
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .section.active.has-overflow::after {
+            opacity: 1;
+        }
+
+        .section.active.has-overflow.scrolled-bottom::after {
+            opacity: 0;
+        }
+
+        /* === CUBE LABEL === */
+        .cube-label {
+            position: fixed;
+            left: 0;
+            width: 42vw;
+            top: 22vh;
+            z-index: 10;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .cube-label.visible { opacity: 1; }
+
+        .cube-label-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            transition: color 0.6s ease;
+        }
+
+        @media (max-width: 900px) {
+            .cube-label { display: none; }
+        }
+
+        /* === HEADER === */
+        .tour-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: rgba(10, 10, 11, 0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 60;
+            opacity: 0;
+            transform: translateY(-100%);
+            transition: all 0.4s ease;
+        }
+
+        .tour-header.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tour-header-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .tour-header-links {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tour-header-link {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .tour-header-link:hover { border-color: var(--border-hover); color: var(--text-primary); }
+        .tour-header-link svg { width: 16px; height: 16px; }
+
+        .tour-header-link {
+            position: relative;
+        }
+        .tour-header-link::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            background: var(--surface-raised);
+            border: 1px solid var(--border);
+            padding: 0.3rem 0.5rem;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .tour-header-link:hover::after { opacity: 1; }
+
+        /* === PROGRESS DOTS === */
+        .progress-track {
+            position: fixed;
+            top: 50%;
+            left: 1.2rem;
+            transform: translateY(-50%);
+            z-index: 60;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .progress-track.visible { opacity: 1; }
+
+        .progress-step {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            border: 1.5px solid var(--step-color, var(--text-muted));
+            background: transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            opacity: 0.5;
+        }
+
+        .progress-step.active {
+            background: var(--step-color, var(--text-primary));
+            border-color: var(--step-color, var(--text-primary));
+            width: 10px;
+            height: 10px;
+            opacity: 1;
+        }
+
+        .progress-step::after {
+            content: attr(data-label);
+            position: absolute;
+            left: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--step-color, var(--text-primary));
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .progress-step:hover::after { opacity: 1; }
+
+        .progress-connector { width: 1px; height: 14px; background: var(--border); }
+
+        /* === SECTION COLOR THEMING === */
+        .section {
+            --section-accent: var(--c-white);
+        }
+        .section[data-face="2"] { --section-accent: var(--c-white); }
+        .section[data-face="4"] { --section-accent: var(--c-green); }
+        .section[data-face="1"] { --section-accent: var(--c-orange); }
+        .section[data-face="5"] { --section-accent: var(--c-blue); }
+        .section[data-face="0"] { --section-accent: var(--c-red); }
+        .section[data-face="3"] { --section-accent: var(--c-yellow); }
+
+        /* === CONTENT STYLES === */
+        .content-text {
+            font-size: 0.92rem;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+        .content-text p { margin-bottom: 1.2rem; }
+        .content-text p:last-child { margin-bottom: 0; }
+        .content-text a {
+            color: var(--section-accent);
+            text-decoration: none;
+            border-bottom: 1px solid color-mix(in srgb, var(--section-accent) 40%, transparent);
+            transition: all 0.2s ease;
+        }
+        .content-text a:hover { border-color: var(--section-accent); }
+        .content-text strong { color: var(--text-primary); font-weight: 500; }
+
+        /* Timeline */
+        .timeline { position: relative; padding-left: 1.5rem; }
+        .timeline::before {
+            content: ''; position: absolute; left: 0; top: 0.5rem; bottom: 0.5rem;
+            width: 1px; background: var(--border);
+        }
+        .timeline-item { position: relative; padding-bottom: 1.3rem; padding-left: 1rem; }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-item::before {
+            content: ''; position: absolute; left: -1.5rem; top: 0.45rem;
+            width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted);
+        }
+        .timeline-item:first-child::before { width: 7px; height: 7px; left: calc(-1.5rem - 1px); background: var(--text-secondary); }
+        .timeline-date { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; color: var(--text-muted); margin-bottom: 0.15rem; }
+        .timeline-text { font-size: 0.84rem; line-height: 1.5; color: var(--text-secondary); }
+        .timeline-text a { color: var(--section-accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--section-accent) 40%, transparent); transition: all 0.2s; }
+        .timeline-text a:hover { border-color: var(--section-accent); }
+
+        /* Experience */
+        .exp-intro { font-size: 0.8rem; line-height: 1.6; color: var(--text-tertiary); margin-bottom: 1.2rem; padding-bottom: 0.5rem; }
+        .exp-group-label { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-top: 1.2rem; margin-bottom: 0.5rem; }
+        .exp-group-label:first-child { margin-top: 0; }
+        .exp-group-intro { font-size: 0.78rem; line-height: 1.5; color: var(--text-tertiary); margin-bottom: 0.8rem; }
+        .exp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 0.5rem 0; align-items: stretch; }
+        @media (max-width: 640px) { .exp-grid { grid-template-columns: 1fr; } }
+        .exp-card {
+            position: relative; text-align: center; padding: 1.2rem 0.8rem;
+            border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05);
+            display: flex; flex-direction: column; align-items: center;
+            transition: border-color 0.3s, background 0.3s, box-shadow 0.3s; cursor: default;
+        }
+        .exp-card:hover { border-color: var(--border-hover); background: rgba(255,255,255,0.09); box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 2; }
+        .exp-card-logos { display: flex; align-items: center; justify-content: center; gap: 0.6rem; margin-bottom: 0.6rem; }
+        .exp-card-logo { width: 140px; height: 90px; object-fit: contain; background: rgba(255,255,255,0.9); border-radius: 6px; padding: 6px; }
+        .exp-card-logos:has(.exp-card-logo + .exp-card-logo) .exp-card-logo { width: 90px; height: 60px; }
+        .exp-card-company { font-size: 0.78rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.15rem; }
+        .exp-card-role { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.1rem; }
+        .exp-card-date { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: var(--text-muted); }
+        .exp-card-details {
+            max-height: 0; overflow: hidden; opacity: 0;
+            transition: max-height 0.35s ease, opacity 0.25s ease, margin 0.35s ease;
+            text-align: left; width: 100%; margin-top: 0;
+        }
+        .exp-card:hover .exp-card-details { max-height: 300px; opacity: 1; margin-top: 0.8rem; }
+        .exp-card-details ul { padding-left: 1rem; list-style: disc; margin: 0; }
+        .exp-card-details li { font-size: 0.7rem; line-height: 1.5; margin-bottom: 0.25rem; color: rgba(255,255,255,0.8); }
+        .exp-card-details li::marker { color: color-mix(in srgb, var(--c-orange) 60%, transparent); }
+        .exp-card-details a, .exp-card-company a, .exp-card-role a { color: var(--c-orange); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--c-orange) 40%, transparent); transition: border-color 0.2s; }
+        .exp-card-details a:hover, .exp-card-company a:hover, .exp-card-role a:hover { border-color: var(--c-orange); }
+        a.exp-card-link { text-decoration: none; color: inherit; cursor: pointer; }
+        a.exp-card-link:hover { border-color: var(--section-accent); box-shadow: 0 0 15px rgba(239,68,68,0.15); }
+
+        /* Publications */
+        .pub-card {
+            display: flex; gap: 1.2rem; padding: 1rem; border-radius: 8px;
+            border: 1px solid var(--border); margin-bottom: 0.7rem;
+            transition: all 0.2s ease; align-items: center;
+        }
+        .pub-card:hover { border-color: var(--border-hover); background: var(--surface); }
+        .pub-thumb { width: 220px; height: 150px; border-radius: 6px; background: var(--surface-raised); flex-shrink: 0; overflow: hidden; }
+        .pub-thumb img { width: 100%; height: 100%; object-fit: contain; }
+        @media (max-width: 640px) { .pub-card { flex-direction: column; } .pub-thumb { width: 100%; height: 120px; } }
+        .pub-title { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; line-height: 1.35; }
+        .pub-title a { color: var(--section-accent); text-decoration: none; transition: opacity 0.2s; }
+        .pub-title a:hover { opacity: 0.75; }
+        .pub-authors { font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 0.15rem; }
+        .pub-authors .me { color: var(--text-primary); font-weight: 500; }
+        .pub-venue { font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); }
+        .pub-venue a { color: color-mix(in srgb, var(--section-accent) 60%, var(--text-muted)); text-decoration: none; transition: color 0.2s; }
+        .pub-venue a:hover { color: var(--section-accent); }
+        .pub-links { margin-top: 0.3rem; display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .pub-links a { font-size: 0.65rem; color: color-mix(in srgb, var(--section-accent) 60%, var(--text-muted)); text-decoration: none; transition: color 0.2s; }
+        .pub-links a:hover { color: var(--section-accent); }
+
+        /* Scholar note */
+        .scholar-note { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.5rem; padding-bottom: 0.5rem; flex-shrink: 0; }
+        .scholar-note a { color: var(--c-blue); border-bottom: 1px solid color-mix(in srgb, var(--c-blue) 40%, transparent); text-decoration: none; }
+
+        /* Connect */
+        .connect-links { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 1.5rem; }
+        .connect-links a { font-size: 0.85rem; color: var(--section-accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--section-accent) 40%, transparent); padding-bottom: 2px; transition: all 0.2s; }
+        .connect-links a:hover { border-color: var(--section-accent); }
+
+        /* Footer */
+        .site-footer {
+            position: fixed;
+            bottom: 0.8rem;
+            left: 36vw;
+            right: 0;
+            z-index: 55;
+            text-align: center;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            letter-spacing: 0.03em;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+        .site-footer.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .site-footer a {
+            color: var(--text-tertiary);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            transition: color 0.2s;
+        }
+        .site-footer a:hover { color: var(--text-secondary); }
+    </style>
 </head>
-
 <body>
-    <div class="cover-photo-container">
-        <div class="cover-photo"></div>
-        <img src="figures/rakvaid.png" alt="Profile Picture" class="profile-picture">
-        <div class="profile-details">
-            <h2>Rakesh Vaideeswaran</h2>
-            <div class="social-links-container">
-                <div class="social-links">
-                    <a href="mailto:rakeshvaideeswaran.nitt@gmail.com">
-                        <i class="fa-regular fa-envelope"></i>
-                    </a>
-                    <a href="https://scholar.google.com/citations?user=r8i2rq8AAAAJ&hl=en" target="_blank">
-                        <i class="ai ai-google-scholar"></i>
-                    </a>
-                    <a href="https://www.linkedin.com/in/rakeshmahesh/" target="_blank">
-                        <i class="fa-brands fa-linkedin-in"></i>
-                    </a>
-                    <a href="CV.pdf" target="_blank">
-                        <i class="fas fa-file-alt"></i>
-                    </a>
-                    <a href="https://www.worldcubeassociation.org/persons/2012VAID02" target="_blank">
-                        <img src="figures/wca.svg" alt="WCA" style="width:20px;height:20px;vertical-align:middle;">
-                    </a>
-                </div>
-            </div>
+
+    <!-- Single fixed canvas for the cube -->
+    <canvas id="cube-canvas"></canvas>
+
+    <!-- Particles (fixed, full page) -->
+    <canvas class="landing-particles" id="particle-canvas"></canvas>
+
+    <!-- Cube click overlay (left 36vw, only in tour) -->
+    <div id="cube-click-overlay"></div>
+    <div id="cube-hover-tooltip"></div>
+
+    <!-- ====== LANDING ====== -->
+    <section class="landing" id="landing">
+        <div class="landing-bg"></div>
+        <div class="landing-grid"></div>
+        <div class="landing-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+            <div class="orb orb-4"></div>
+        </div>
+        <div class="landing-content" id="landing-content"></div>
+        <div class="landing-scroll-cue" id="scroll-cue">
+            <span class="scroll-cue-text">Scroll to explore</span>
+            <div class="scroll-cue-arrow"></div>
+        </div>
+    </section>
+
+    <!-- ====== TOUR ====== -->
+    <div class="tour" id="tour">
+        <div class="tour-sections" id="tour-sections">
+        <!-- Sections populated by data.js -->
         </div>
     </div>
 
-    <nav>
-        <ul>
-            <li><a href="#" class="tab active" onclick="showTab('home')">Home</a></li>
-            <li><a href="#" class="tab active" onclick="showTab('news')">News</a></li>
-            <li><a href="#" class="tab" onclick="showTab('experiences')">Experience</a></li>
-            <li><a href="#" class="tab" onclick="showTab('research')">Research</a></li>
-            <li><a href="#" class="tab" onclick="showTab('cv')">CV</a></li>
-        </ul>
-    </nav>
+    <!-- ====== FIXED UI ====== -->
+    <header class="tour-header" id="tour-header">
+        <span class="tour-header-name" id="tour-header-name"></span>
+        <div class="tour-header-links" id="tour-header-links"></div>
+    </header>
 
-    <main>
-        <section id="home" class="tab-content">
-            <p>
-                I'm an Applied Scientist II on the Amazon AGI team, building large-scale multimodal foundation models: systems that see, read, reason, and generate across modalities. I am a core contributor to <strong>Amazon Nova family of Foundation Models</strong> (<strong><a href="https://www.amazon.science/publications/the-amazon-nova-family-of-models-technical-report-and-model-card" target="_blank">Nova 1 Family</a>; <a href="https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models" target="_blank">Nova 2 Family</a></strong>).
-            </p>
-            <p>
-                I earned my Master's in ECE from UIUC, explored multilingual speech recognition problems at IISc Bangalore, and shipped fraud detection systems at Discover Financial Services.
-            </p>
-            <p>
-                Beyond my work in AI, I'm also a competitive speedcuber: one of the few who can solve a 3x3 in <a href="https://www.worldcubeassociation.org/persons/2012VAID02" target="_blank">under 10 seconds</a>.
-            </p>
-
-            <p>
-                Over the years, I've shared this passion with many by teaching them how to solve the cube. Turns out, the cube teaches far more than just bringing six colors together. Curious what I mean? My friend and fellow speedcuber <a href="https://www.worldcubeassociation.org/persons/2011NARA02" target="_blank">Dr. Bhargav Narasimhan</a> captures it well in <a href="https://www.cubelelo.com/blogs/cubing/why-should-you-cube" target="_blank">this piece</a>.
-            </p>
-
-            <p>
-                The cube has been a constant in how I think about problem decomposition, pattern recognition, and the discipline of optimizing one algorithm at a time.
-            </p>
-            <p>
-                <em>"It always seems impossible until it's done."</em>
-            </p>
-        </section>
-
-        <section id="news" class="tab-content">
-            <ul class="collapsible-list">
-                <li class="show"><span class="date">[Dec 2025]</span> We launched <a href="https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models" target="_blank">Amazon Nova 2: Multimodal reasoning and generation models</a>, which includes Nova 2 - Lite, Pro, Omni, Sonic</li>
-                <li class="show"><span class="date">[Sep 2025]</span> Reviewer, <a href="https://aaai.org/conference/aaai/aaai-26/" target="_blank">AAAI 2026</a></li>
-                <li class="show"><span class="date">[May 2025]</span> We launched <a href="https://www.amazon.science/publications/amazon-nova-premier-technical-report-and-model-card" target="_blank">Amazon Nova Premier</a>, our most capable multimodal foundation model and teacher for model distillation</li>
-                <li class="show"><span class="date">[Apr 2025]</span> Promoted to Applied Scientist II at Amazon AGI</li>
-                <li class="show"><span class="date">[Dec 2024]</span> We launched the <a href="https://www.amazon.science/publications/the-amazon-nova-family-of-models-technical-report-and-model-card" target="_blank">Amazon Nova Family of Foundation Models</a></li>
-                <li class="show"><span class="date">[Dec 2023]</span> Started as an Applied Scientist on the Amazon Artificial General Intelligence (AGI) Team</li>
-                <li class="show"><span class="date">[Aug 2023]</span> Project "<a href="https://spire.ee.iisc.ac.in/assets/PDFs/papers_pdf/Can_the_decoded_text_from_automatic_speech_recognition_effectively_detect_spoken_grammar_errors.pdf" target="_blank">Can the decoded text from automatic speech recognition effectively detect spoken grammar errors?</a>" accepted at SLaTE workshop, Interspeech 2023</li>
-                <li class="show"><span class="date">[Feb 2023]</span> Started as a Senior Data Scientist with the Fraud Strategy Team at Discover Financial Services</li>
-                <li class="show"><span class="date">[Dec 2022]</span> Completed my Master's in ECE from UIUC</li>
-                <li class="show"><span class="date">[Oct 2022]</span> "<a href="https://arxiv.org/pdf/2211.05190" target="_blank">Towards Reasoning Aware Explainable VQA</a>" accepted at TSRML workshop, NeurIPS 2022</li>
-                <li class="show"><span class="date">[May 2022]</span> Started as an Applied Scientist Intern at Amazon Alexa</li>
-                <li class="show"><span class="date">[Oct 2021]</span> Project "<a href="https://arxiv.org/pdf/2112.04151" target="_blank">A study on native American English speech recognition by Indian listeners with varying word familiarity level</a>" accepted at O-COCOSDA 2021</li>
-                <li class="show"><span class="date">[Aug 2021]</span> Started my Master's in ECE (Machine Learning, Signal Processing) at UIUC</li>
-                <li class="show"><span class="date">[Jul 2021]</span> Project "<a href="https://www.isca-archive.org/interspeech_2021/diwan21_interspeech.pdf" target="_blank">MUCS 2021</a>" accepted at Interspeech 2021</li>
-                <li class="show"><span class="date">[Jul 2020]</span> Started as a Junior Research Fellow at <a href="https://spire.ee.iisc.ac.in/" target="_blank">SPIRE Lab</a>, Indian Institute of Science, Bengaluru</li>
-                <li class="show"><span class="date">[Apr 2019]</span> Project "<a href="https://ieeexplore.ieee.org/document/8933285" target="_blank">ILocUS</a>"" accepted at IMICPW Conference, 2019</li>
-                <li class="show"><span class="date">[May 2019]</span> Started as a Mitacs Globalink Research Scholar at <a href="https://www.unb.ca/ibme/" target="_blank">IBME</a>, UNB, Fredericton, Canada</li>
-                <li class="show"><span class="date">[Jan 2019]</span> Awarded the <a href="https://www.mitacs.ca/our-programs/globalink-research-award/" target="_blank">Mitacs Globalink</a> Research Scholarship</li>
-              </ul>              
-            <!-- <a href="#" id="read-more">Read More</a> -->
-        </section>
-
-        <section id="experiences" class="tab-content" style="display: none;">
-            <p>
-                <b style="font-size: 1.07em;">Research</b><br>
-                I have been involved in multiple research projects, with collaborations across both industry and academia. My prior work spans multiple research areas including Multimodal Foundation Model Training & Evaluation, 
-                Image-Text understanding, Natural Language Processing, Automatic Speech Recognition, etc.
-            </p>
-            <div class="grid-container">
-                <div class="grid-item">
-                    <img src="figures/amazon.png" alt="Amazon Logo">
-                    <p><b>Amazon AGI Foundations</b></p>
-                    <p>Dec 2023 - Present</p>
-                    <div class="description">
-                        <li>Building Nova Family of Foundation Models</li>
-                        <li>Working on enchancing reasoning capabilities in multimodal foundation models</li>
-                    </div>
-                </div>
-                <div class="grid-item">
-                    <img src="figures/discover.png" alt="Discover Logo">
-                    <p><b>Discover Financial Services</b></p>
-                    <p>Feb 2023 - Dec 2023</p>
-                    <div class="description">
-                        <li>Developed fraud strategy solutions for Account Takeover (ATO) type fraud across multiple channels, primarily zelle</li>
-                        <li>Played a key role in saving $$$ in potential fraud losses by aligning technical solutions with evolving threat landscapes</li>
-                    </div>
-                </div>
-                <div class="grid-item">
-                    <img src="figures/alexa.png" alt="Amazon Alexa Logo">
-                    <p><b>Amazon Alexa</b></p>
-                    <p>May 2022 - Aug 2022</p>
-                    <div class="description">
-                        <li>Designed a Coarse-to-Fine Reasoning VQA system combining GloVe-based image-question fusion with an explainable LSTM+Transformer decoder, achieving strong performance on VQA-E and GQA-REX</li>
-                        <li>Published my research work at TSRML workshop, NeurIPS 2022</li>
-                    </div>
-                </div>
-                <div class="grid-item">
-                    <img src="figures/iisc.svg" alt="IISC Logo">
-                    <p><b>Indian Institute of Science, Bengaluru</b></p>
-                    <p>Jul 2020 - Jul 2021</p>
-                    <div class="description">
-                        <li>Curated multilingual speech data and developed a baseline ASR system for 6 Indian languages (30% WER) as part of the MUCS 2021 challenge, in collaboration with Microsoft Research India, IBM, and Navana Tech.</li>
-                        <li>Published at Interspeech 2021 and organized the <a href="https://navana-tech.github.io/MUCS2021/" target="_blank">MUCS 2021 workshop</a> featuring expert talks from academia and industry</li>
-                    </div>
-                </div>
-                <div class="grid-item">
-                    <img src="figures/unb.jpg" alt="UNB Logo">
-                    <p><b>University of New Brunswick, Fredericton</b></p>
-                    <p>May 2019 - Aug 2019</p>
-                    <div class="description">
-                        <li>Built an air-writing sentence recognition system using EMG and IMU sensor data from a wrist-based device, handling the full pipeline from data collection to model evaluation</li>
-                        <li>Trained an LSTM-based deep learning model with CTC loss using Keras and TensorFlow</li>
-                    </div>
-                </div>
-
-                <div class="grid-item">
-                    <img src="figures/nitt.png" alt="NITT Logo">
-                    <p><b>National Institute of Technology, Tiruchirappalli</b></p>
-                    <p>Dec 2019 - May 2020</p>
-                    <div class="description">
-                        <li>Undergraduate Thesis: Trained a deep learning model based on Convolutional Autoencoder-Artificial Neural Network architecture to estimate the distance (in 3D space) between two arbitrary points on a 2D image</li>
-                    </div>
-                </div>
-
-                <div class="grid-item">
-                    <img src="figures/iisc.svg" alt="IISC Logo">
-                    <p><b>Indian Institute of Science, Bengaluru</b></p>
-                    <p>May 2018 - Jul 2018</p>
-                    <div class="description">
-                        <li>Analyzed airplane sensor data with multiple Machine Learning algorithms to predict the status of blockage of inlet air-nozzles</li>
-                    </div>
-                </div>
-            </div>
-            <br><br>
-            <p>
-                <b style="font-size: 1.07em;">Teaching</b><br>
-                I have worked as a puzzle coach, where I taught kids (aged 6-15) to solve the Rubik's cube and desgined training curriculums for fellow coaches.
-            </p>
-            <div class="grid-container">
-                <div class="grid-item">
-                    <img src="figures/xoog.png" alt="Xoog Logo">
-                    <p><b>Xoog (now <a href="https://famyo.in/" Famyo>Famyo</a>)</b></p>
-                    <p>Dec 2020 - Jul 2021</p>
-                    <div class="description">
-                        <li>Designed and taught a structured Rubik’s Cube curriculum—from 2×2 basics to 3×3 Blindfolded and 4×4—mentoring 20+ kids aged 6–15 with personalized strategies for speed improvement</li>
-                        <li>Ranked among the top 4 coaches (out of 40+) in May 2021 and developed advanced training modules for fellow instructors as part of the Coach Training Program</li>
-                    </div>
-                </div>
-            </div>
-            <br><br>
-        </section>
-
-        <section id="research" class="tab-content" style="display: none;">
-            <p>
-                A full list of publications can be seen on my 
-                <a href="https://scholar.google.com/citations?user=r8i2rq8AAAAJ&hl=en" target="_blank">Google Scholar</a> page.<br>
-                (* denotes equal contribution)
-            </p>
-
-            <!-- Publication -->
-            <div class="project">
-                <img src="figures/nova2_family.png" alt="Amazon Nova 2" class="project-thumbnail">
-                <div class="project-details">
-                    <p class="pub-title" style="color:#007CD5">
-                        
-                    </p>
-                    <p class="pub-title">
-                        <a href="https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models" target="_blank">Amazon Nova 2: Multimodal reasoning and generation models</a> 
-                    </p>
-                    <p class="pub-authors">
-                        Amazon Artificial General Intelligence
-                    </p>
-                    <p class="pub-venue">
-                        Amazon Science, 2025<br>
-                        Media Coverage:
-                        <a href="https://techcrunch.com/2025/12/02/aws-launches-new-nova-ai-models-and-a-service-that-gives-customers-more-control/" target="_blank">TechCrunch</a>,
-                        <a href="https://www.wired.com/story/amazon-nova-forge-ai-models/" target="_blank">WIRED</a>,
-                        <a href="https://www.techbuzz.ai/articles/amazon-unveils-nova-2-ai-models-and-revolutionary-nova-forge" target="_blank">TechBuzz</a>,
-                        <a href="https://www.crn.com/news/ai/2025/aws-nova-2-ai-models-launched-at-reinvent-2025-as-ceo-touts-new-innovation" target="_blank">CRN</a>
-                        
-                    </p>
-                </div>
-            </div>
-            
-            <!-- Publication -->
-            <div class="project">
-                <img src="figures/nova_premier.png" alt="Amazon Nova Premier" class="project-thumbnail">
-                <div class="project-details">
-                    <p class="pub-title" style="color:#007CD5">
-                        
-                    </p>
-                    <p class="pub-title">
-                        <a href="https://www.amazon.science/publications/amazon-nova-premier-technical-report-and-model-card" target="_blank">Amazon Nova Premier: Technical report and model card</a> 
-                    </p>
-                    <p class="pub-authors">
-                        Amazon Artificial General Intelligence
-                    </p>
-                    <p class="pub-venue">
-                        Amazon Science, 2025<br>
-                        Media Coverage:
-                        <a href="https://techcrunch.com/2025/04/30/amazon-launches-nova-premier-its-largest-ai-model-yet/" target="_blank">TechCrunch</a>,
-                        <a href="https://thecuberesearch.com/amazon-debuts-nova-premier-high-performance-multimodal-ai-for-agent-workflows/" target="_blank">the CUBE research</a>,
-                        <a href="https://www.techtarget.com/searchenterpriseai/news/366623532/What-Amazon-Nova-Premier-reveals-about-AI-models-and-agents" target="_blank">TechTarget</a>
-                    </p>
-                </div>
-            </div>
-
-            <!-- Publication -->
-            <div class="project">
-                <img src="figures/nova_family.png" alt="Amazon Nova Family" class="project-thumbnail">
-                <div class="project-details">
-                    <p class="pub-title" style="color:#007CD5">
-                        
-                    </p>
-                    <p class="pub-title">
-                        <a href="https://www.amazon.science/publications/the-amazon-nova-family-of-models-technical-report-and-model-card" target="_blank">The Amazon Nova Family of Models: Technical Report and Model Card</a> 
-                    </p>
-                    <p class="pub-authors">
-                        Amazon Artificial General Intelligence (see "Correspondence and Contributors" for all contributors)
-                    </p>
-                    <p class="pub-venue">
-                        Amazon Science, 2024<br>
-                        Media Coverage: 
-                        <a href="https://www.reuters.com/technology/artificial-intelligence/amazon-announces-new-slate-ai-models-2024-12-03/" target="_blank">Reuters</a>, 
-                        <a href="https://siliconangle.com/2024/12/03/amazon-introduces-next-gen-nova-family-multimodal-ai-foundation-models/" target="_blank">SiliconANGLE</a>, 
-                        <a href="https://www.lifewire.com/amazon-nova-ai-foundation-models-8755972" target="_blank">Lifewire</a>
-                    </p>
-                </div>
-            </div>
-
-            <!-- Publication -->
-            <div class="project">
-                <img src="figures/slate_sged.png" alt="Slate SGED" class="project-thumbnail">
-                <div class="project-details">
-                    <p class="pub-title" style="color:#007CD5">
-                        
-                    </p>
-                    <p class="pub-title">
-                        <a href="https://spire.ee.iisc.ac.in/assets/PDFs/papers_pdf/Can_the_decoded_text_from_automatic_speech_recognition_effectively_detect_spoken_grammar_errors.pdf" target="_blank">Can the decoded text from automatic speech recognition effectively detect spoken grammar errors?</a> 
-                    </p>
-                    <p class="pub-authors">
-                        Chowdam Venkata Thirumala Kumar, Meenakshi Sirigiraju, <u>Rakesh Vaideeswaran</u>, Prasanta Kumar Ghosh, Chiranjeevi Yarra
-                    </p>
-                    <p class="pub-venue">
-                        SLaTE workshop, Interspeech, 2023
-                    </p>
-                </div>
-            </div>
-
-            <!-- Publication -->
-            <div class="project">
-                <img src="figures/evqa.png" alt="Project EVQA" class="project-thumbnail">
-                <div class="project-details">
-                    <p class="pub-title" style="color:#007CD5">
-                        
-                    </p>
-                    <p class="pub-title">
-                        <a href="https://arxiv.org/pdf/2211.05190" target="_blank">Towards Reasoning-Aware Explainable VQA</a> 
-                    </p>
-                    <p class="pub-authors">
-                        <u>Rakesh Vaideeswaran</u>, Feng Gao, Abhinav Mathur, Govind Thattai
-                    </p>
-                    <p class="pub-venue">
-                        TSRML Workshop, NeurIPS, 2022
-                    </p>
-                </div>
-            </div>
-
-            <!-- Publication -->
-            <div class="project">
-                <img src="figures/aesr.png" alt="Project AESR" class="project-thumbnail">
-                <div class="project-details">
-                    <p class="pub-title" style="color:#007CD5">
-                        
-                    </p>
-                    <p class="pub-title">
-                        <a href="https://arxiv.org/pdf/2112.04151" target="_blank">A study on native American English speech recognition by Indian listeners with varying word familiarity level</a> 
-                    </p>
-                    <p class="pub-authors">
-                        Abhayjeet Singh, Achuth Rao, <u>Rakesh Vaideeswaran</u>, Chiranjeevi Yarra, Prasanta Kumar Ghosh
-                    </p>
-                    <p class="pub-venue">
-                        O-COCOSDA, 2021
-                    </p>
-                </div>
-            </div>
-
-            <!-- Publication -->
-            <div class="project">
-                <img src="figures/mucs2021.png" alt="Project MUCS" class="project-thumbnail">
-                <div class="project-details">
-                    <p class="pub-title" style="color:#007CD5">
-                        
-                    </p>
-                    <p class="pub-title">
-                        <a href="https://www.isca-archive.org/interspeech_2021/diwan21_interspeech.pdf" target="_blank">Multilingual and code-switching ASR challenges for low resource Indian languages</a> 
-                    </p>
-                    <p class="pub-authors">
-                        Anuj Diwan*, <u>Rakesh Vaideeswaran</u>*, Sanket Shah*, Ankita Singh*, Srinivasa Raghavan, Shreya Khare, Vinit Unni, Saurabh Vyas, Akash Rajpuria, Chiranjeevi Yarra, Ashish Mittal, Prasanta Kumar Ghosh, Preethi Jyothi, Kalika Bali, Vivek Seshadri, Sunayana Sitaram, Samarth Bharadwaj, Jai Nanavati, Raoul Nanavati, Karthik Sankaranarayanan, Tejaswi Seeram, Basil Abraham
-                    </p>
-                    <p class="pub-venue">
-                        Interspeech, 2021<br>
-                        Media Coverage:
-                        <a href="https://www.businesswire.com/news/home/20210811005890/en/Dialpad-India-Successfully-Trains-Six-Indian-Languages-as-Part-of-MUCS-2021-ASR-Challenge" target="_blank">BusinessWire</a>
-                    </p>
-                </div>
-            </div>
-            
-            <div class="project">
-                <img src="figures/dimest.png" alt="Project Dimension estimation" class="project-thumbnail">
-                <div class="project-details">
-                    <p class="pub-title" style="color:#007CD5">
-                        
-                    </p>
-                    <p class="pub-title">
-                        <a href="https://medium.com/geekculture/convolutional-autoencoder-based-dimension-estimation-from-depth-map-of-monocular-images-9269d966bb86" target="_blank">Dimension Estimation from Depth-Map of Monocular Images</a> 
-                    </p>
-                    <p class="pub-authors">
-                        Guruprasad Viswanathan Ramesh*, Hariharan Natesh*, <u>Rakesh Vaideeswaran</u>*
-                    </p>
-                    <p class="pub-venue">
-                        Medium, 2021
-                    </p>
-                </div>
-            </div>
-
-            <!-- Publication -->
-            <div class="project">
-                <img src="figures/ilocus.png" alt="Project ILocUS" class="project-thumbnail">
-                <div class="project-details">
-                    <p class="pub-title" style="color:#007CD5">
-                        
-                    </p>
-                    <p class="pub-title">
-                        <a href="https://ieeexplore.ieee.org/document/8933285" target="_blank">Analysis of machine learning algorithms for wi-fi-based indoor positioning system</a> 
-                    </p>
-                    <p class="pub-authors">
-                        R Abishek*, KR Abishek*, N Hariharan*, <u>Rakesh Vaideeswaran</u>*, C Sundara Paripooranan*
-                    </p>
-                    <p class="pub-venue">
-                        IMICPW, 2019<br>
-                        Working Video: <a href="https://drive.google.com/file/d/17l8LoIRsL4FXuDlvG23agm6GUnuGONlP/view" target="_blank">Link</a>
-                    </p>
-                </div>
-            </div>
-        </section>
-
-        <section id="cv" class="tab-content" style="display: none;">
-            <div class="resume-container">
-                <div class="resume-box">
-                <iframe src="CV.pdf" width="80%" height="881px" frameborder="0"></iframe>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <div style="text-align: center; font-size: 14px; margin-top: 20px; padding: 10px 0; color: #5c5b5b;">
-        <p> 
-            <span>Design inspired by <a href="https://savya08.github.io/" target="_blank">Savya Khosla</a></span> |
-            <span>Template on <a href="https://github.com/RakeshVaid/rakeshvaid.github.io" target="_blank">GitHub</a></span> |
-            <span>Last updated: Dec 2025</span>
-        </p>
+    <div class="cube-label" id="cube-label">
+        <span class="cube-label-text" id="cube-label-text">ABOUT</span>
     </div>
-    <script src="script.js"></script>    
+
+    <nav class="progress-track" id="progress-track"></nav>
+
+    <footer class="site-footer">
+        <span id="site-footer-text"></span>
+    </footer>
+
+    <script>
+    (function() {
+        // === POPULATE FROM DATA ===
+        const COLOR_VAR_MAP = { white: '--c-white', green: '--c-green', orange: '--c-orange', blue: '--c-blue', red: '--c-red', yellow: '--c-yellow' };
+        const HEADER_ICONS = {
+            email: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>',
+            scholar: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>',
+            linkedin: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>',
+            cv: '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'
+        };
+
+        function populateFromData() {
+            const D = PORTFOLIO_DATA;
+
+            // Landing
+            document.getElementById('landing-content').innerHTML =
+                `<h1 class="landing-name">${D.name}</h1><p class="landing-role">${D.role}</p>`;
+
+            // Tour header
+            document.getElementById('tour-header-name').textContent = D.name;
+            document.getElementById('site-footer-text').innerHTML = D.footer || '';
+            const headerLinks = document.getElementById('tour-header-links');
+            headerLinks.innerHTML =
+                `<a href="mailto:${D.email}" class="tour-header-link" data-tooltip="Email">${HEADER_ICONS.email}</a>` +
+                `<a href="${D.links.scholar}" target="_blank" class="tour-header-link" data-tooltip="Google Scholar">${HEADER_ICONS.scholar}</a>` +
+                `<a href="${D.links.linkedin}" target="_blank" class="tour-header-link" data-tooltip="LinkedIn">${HEADER_ICONS.linkedin}</a>` +
+                `<a href="${D.links.cv}" target="_blank" class="tour-header-link" data-tooltip="Resume">${HEADER_ICONS.cv}</a>`;
+
+            // Progress nav
+            const progressTrack = document.getElementById('progress-track');
+            D.sections.forEach((sec, i) => {
+                if (i > 0) progressTrack.innerHTML += '<div class="progress-connector"></div>';
+                progressTrack.innerHTML += `<div class="progress-step" data-index="${i}" data-label="${sec.label}" data-section="sec-${sec.id}" style="--step-color: var(${COLOR_VAR_MAP[sec.color]});"></div>`;
+            });
+
+            // Tour sections
+            const tourSections = document.getElementById('tour-sections');
+            D.sections.forEach(sec => {
+                const colorVar = COLOR_VAR_MAP[sec.color];
+                let bodyHTML = '';
+
+                if (sec.content.type === 'text') {
+                    bodyHTML = `<div class="content-text">${sec.content.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>`;
+                } else if (sec.content.type === 'timeline') {
+                    bodyHTML = '<div class="timeline">' +
+                        sec.content.items.map(item => `<div class="timeline-item"><div class="timeline-date">${item.date}</div><div class="timeline-text">${item.text}</div></div>`).join('') +
+                        '</div>';
+                } else if (sec.content.type === 'experience') {
+                    let expIdx = 0;
+                    bodyHTML = (sec.content.intro ? `<p class="exp-intro">${sec.content.intro}</p>` : '') +
+                        sec.content.groups.map(group => {
+                            let html = `<div class="exp-group-label">${group.label}</div>`;
+                            if (group.intro) html += `<p class="exp-group-intro">${group.intro}</p>`;
+                            html += '<div class="exp-grid">' +
+                                group.items.map(item => {
+                                    const logos = Array.isArray(item.logo) ? item.logo : [item.logo];
+                                    const logoHTML = logos.map(src => `<img class="exp-card-logo" src="${src}" alt="${item.company}">`).join('');
+                                    const cardInner = `<div class="exp-card-logos">${logoHTML}</div><div class="exp-card-company">${item.company}</div><div class="exp-card-role">${item.role}</div>${item.date ? `<div class="exp-card-date">${item.date}</div>` : ''}<div class="exp-card-details"><ul>${item.bullets.map(b => `<li>${b}</li>`).join('')}</ul></div>`;
+                                    const card = item.link
+                                        ? `<a href="${item.link}" target="_blank" class="exp-card exp-card-link">${cardInner}</a>`
+                                        : `<div class="exp-card">${cardInner}</div>`;
+                                    expIdx++;
+                                    return card;
+                                }).join('') +
+                                '</div>';
+                            return html;
+                        }).join('');
+                } else if (sec.content.type === 'publications') {
+                    bodyHTML = sec.content.items.map(pub => {
+                            let pressHTML = pub.press && pub.press.length > 0 ? `<div class="pub-links">${pub.press.map(p => `<a href="${p.url}" target="_blank">${p.label}</a>`).join('')}</div>` : '';
+                            return `<div class="pub-card"><div class="pub-thumb"><img src="${pub.thumb}" alt=""></div><div><div class="pub-title"><a href="${pub.url}" target="_blank">${pub.title}</a></div><div class="pub-venue">${pub.venue}</div><div class="pub-authors">${pub.authors}</div>${pressHTML}</div></div>`;
+                        }).join('');
+                } else if (sec.content.type === 'connect') {
+                    bodyHTML = `<div class="content-text">${sec.content.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>` +
+                        `<div class="connect-links">${sec.content.links.map(l => `<a href="${l.url}" target="_blank">${l.label}</a>`).join('')}</div>`;
+                }
+
+                const scholarNoteHTML = (sec.content.type === 'publications' && sec.content.scholarNote)
+                    ? `<p class="scholar-note">${sec.content.scholarNote}</p>` : '';
+
+                tourSections.innerHTML += `
+                    <div class="section" data-face="${sec.face}" id="sec-${sec.id}">
+                        <div class="section-label" style="color: var(${colorVar});"><span class="section-dot" style="background: var(${colorVar});"></span> ${sec.number} / ${sec.label}</div>
+                        <h2 class="section-title">${sec.title}</h2>
+                        ${scholarNoteHTML}
+                        <div class="section-body">${bodyHTML}</div>
+                    </div>`;
+            });
+        }
+
+        populateFromData();
+
+        const COLORS = {
+            green: 0x22c55e, red: 0xef4444, white: 0xe4e4e7,
+            blue: 0x3b82f6, orange: 0xf97316, yellow: 0xeab308, black: 0x111113
+        };
+
+        const FACE_ROTATIONS = {
+            2: new THREE.Euler(Math.PI/2, 0, 0),       // White: +Y (About)
+            4: new THREE.Euler(0, 0, 0),               // Green: +Z (News)
+            1: new THREE.Euler(0, Math.PI/2, 0),       // Orange: -X (Experience)
+            5: new THREE.Euler(0, Math.PI, 0),         // Blue: -Z (Research)
+            0: new THREE.Euler(0, -Math.PI/2, 0),      // Red: +X (Projects)
+            3: new THREE.Euler(-Math.PI/2, 0, 0),      // Yellow: -Y (Connect)
+        };
+
+        let scene, camera, renderer, controls;
+        let cubeGroup;
+        let currentFace = -1;
+        let scrambleAnimating = false;
+        let scrambleMoveStack = [];
+        let inLanding = true;
+        let wasInLanding = true;
+        let inTourMode = false;
+
+        const CUBE_LANDING = { x: 0, y: 0, z: 16 };
+        const CUBE_TOUR = { x: 0, y: 0, z: 20 };
+
+        function init() {
+            const canvas = document.getElementById('cube-canvas');
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(CUBE_LANDING.x, CUBE_LANDING.y, CUBE_LANDING.z);
+
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            const key = new THREE.DirectionalLight(0xffffff, 0.7);
+            key.position.set(4, 8, 6);
+            scene.add(key);
+            const fill = new THREE.DirectionalLight(0x8899bb, 0.25);
+            fill.position.set(-4, -2, -4);
+            scene.add(fill);
+
+            cubeGroup = createCubeGroup();
+            scene.add(cubeGroup);
+            cubeGroup.rotation.set(Math.PI / 5.5, -Math.PI / 4, 0);
+
+            createFaceLines();
+
+            // Orbit controls for landing interaction
+            controls = new THREE.OrbitControls(camera, canvas);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.04;
+            controls.enablePan = false;
+            controls.enableZoom = false;
+            controls.rotateSpeed = 0.4;
+            controls.enabled = true;
+
+            canvas.classList.add('interactive');
+
+            window.addEventListener('resize', onResize);
+            setupScrollBehavior();
+
+            animate();
+            setTimeout(scrambleAndSolve, 600);
+        }
+
+        function createCubeGroup() {
+            const group = new THREE.Group();
+            const geo = new THREE.BoxGeometry(0.92, 0.92, 0.92);
+            const gap = 1.02;
+            const matProps = { roughness: 0.5, metalness: 0.05, emissiveIntensity: 0.05 };
+            const mats = [
+                new THREE.MeshStandardMaterial({ ...matProps, color: COLORS.red, emissive: COLORS.red }),
+                new THREE.MeshStandardMaterial({ ...matProps, color: COLORS.orange, emissive: COLORS.orange }),
+                new THREE.MeshStandardMaterial({ ...matProps, color: COLORS.white, emissive: 0x666666 }),
+                new THREE.MeshStandardMaterial({ ...matProps, color: COLORS.yellow, emissive: COLORS.yellow }),
+                new THREE.MeshStandardMaterial({ ...matProps, color: COLORS.green, emissive: COLORS.green }),
+                new THREE.MeshStandardMaterial({ ...matProps, color: COLORS.blue, emissive: COLORS.blue }),
+            ];
+            const blackMat = new THREE.MeshStandardMaterial({ color: COLORS.black, roughness: 0.9 });
+
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
+                    for (let z = -1; z <= 1; z++) {
+                        const faceMats = [
+                            x === 1 ? mats[0] : blackMat,
+                            x === -1 ? mats[1] : blackMat,
+                            y === 1 ? mats[2] : blackMat,
+                            y === -1 ? mats[3] : blackMat,
+                            z === 1 ? mats[4] : blackMat,
+                            z === -1 ? mats[5] : blackMat,
+                        ];
+                        const mesh = new THREE.Mesh(geo, faceMats);
+                        mesh.position.set(x * gap, y * gap, z * gap);
+                        group.add(mesh);
+                    }
+                }
+            }
+            return group;
+        }
+
+        // === SCRAMBLE ===
+        function generateScramble() {
+            const axes = ['x', 'y', 'z'];
+            const moves = [];
+            let last = '';
+            for (let i = 0; i < 10; i++) {
+                let axis;
+                do { axis = axes[Math.floor(Math.random() * 3)]; } while (axis === last);
+                last = axis;
+                moves.push({ axis, index: [-1, 0, 1][Math.floor(Math.random() * 3)], dir: Math.random() < 0.5 ? 1 : -1 });
+            }
+            return moves;
+        }
+
+        let cancelScramble = false;
+
+        async function scrambleAndSolve() {
+            if (scrambleAnimating) return;
+            scrambleAnimating = true;
+            cancelScramble = false;
+            scrambleMoveStack = [];
+            const moves = generateScramble();
+            for (const m of moves) {
+                if (cancelScramble) break;
+                scrambleMoveStack.push(m);
+                await rotateSlice(m.axis, m.index, m.dir, 160);
+            }
+            if (!cancelScramble) await sleep(300);
+            while (scrambleMoveStack.length > 0 && !cancelScramble) {
+                const m = scrambleMoveStack.pop();
+                await rotateSlice(m.axis, m.index, -m.dir, 140);
+            }
+            scrambleAnimating = false;
+        }
+
+        function stopScrambleAndReset() {
+            cancelScramble = true;
+            TWEEN.removeAll();
+            // Reset all cubies to solved position
+            const gap = 1.02;
+            let i = 0;
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
+                    for (let z = -1; z <= 1; z++) {
+                        const mesh = cubeGroup.children[i];
+                        mesh.position.set(x * gap, y * gap, z * gap);
+                        mesh.quaternion.identity();
+                        i++;
+                    }
+                }
+            }
+            scrambleAnimating = false;
+            scrambleMoveStack = [];
+        }
+
+        function rotateSlice(axis, index, dir, duration) {
+            return new Promise(resolve => {
+                const gap = 1.02;
+                const slice = cubeGroup.children.filter(m => Math.abs(m.position[axis] - index * gap) < 0.1);
+                const angle = dir * Math.PI / 2;
+                const obj = { t: 0 };
+                const initials = slice.map(m => ({ pos: m.position.clone(), quat: m.quaternion.clone() }));
+                const axisVec = new THREE.Vector3(axis === 'x' ? 1 : 0, axis === 'y' ? 1 : 0, axis === 'z' ? 1 : 0);
+
+                new TWEEN.Tween(obj).to({ t: 1 }, duration)
+                    .easing(TWEEN.Easing.Cubic.InOut)
+                    .onUpdate(() => {
+                        const q = new THREE.Quaternion().setFromAxisAngle(axisVec, angle * obj.t);
+                        slice.forEach((m, i) => {
+                            m.position.copy(initials[i].pos.clone().applyQuaternion(q));
+                            m.quaternion.copy(q.clone().multiply(initials[i].quat));
+                        });
+                    })
+                    .onComplete(() => {
+                        slice.forEach(m => {
+                            m.position.x = Math.round(m.position.x / gap) * gap;
+                            m.position.y = Math.round(m.position.y / gap) * gap;
+                            m.position.z = Math.round(m.position.z / gap) * gap;
+                        });
+                        resolve();
+                    }).start();
+            });
+        }
+
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        // === SCROLL-DRIVEN BEHAVIOR ===
+        function setupScrollBehavior() {
+            const header = document.getElementById('tour-header');
+            const progress = document.getElementById('progress-track');
+            const sections = document.querySelectorAll('.section');
+            const steps = document.querySelectorAll('.progress-step');
+            const landing = document.getElementById('landing');
+
+            setTimeout(() => {
+                sections.forEach(sec => {
+                    const body = sec.querySelector('.section-body');
+                    if (body && body.scrollHeight > body.clientHeight + 30) {
+                        sec.classList.add('has-overflow');
+                        body.addEventListener('scroll', () => {
+                            const atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 10;
+                            sec.classList.toggle('scrolled-bottom', atBottom);
+                        });
+                    }
+                });
+            }, 100);
+
+            // Progress clicks
+            steps.forEach(step => {
+                step.addEventListener('click', () => {
+                    const target = document.getElementById(step.dataset.section);
+                    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
+
+            // Scroll handler for cube position transition
+            let ticking = false;
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    requestAnimationFrame(() => {
+                        updateOnScroll(landing, header, progress, sections, steps);
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            });
+
+            // Face label mapping
+            const FACE_LABELS = { 2: 'About', 4: 'News', 1: 'Experience', 5: 'Research', 0: 'Projects', 3: 'Connect' };
+            const FACE_CSS_COLORS = { 2: 'var(--c-white)', 4: 'var(--c-green)', 1: 'var(--c-orange)', 5: 'var(--c-blue)', 0: 'var(--c-red)', 3: 'var(--c-yellow)' };
+            const cubeLabel = document.getElementById('cube-label');
+            const cubeLabelText = document.getElementById('cube-label-text');
+
+            // Section observer for face rotation + active states
+            const FACE_CSS_RAW_COLORS = { 2: '#e4e4e7', 4: '#22c55e', 1: '#f97316', 5: '#3b82f6', 0: '#ef4444', 3: '#eab308' };
+            const tourSectionsEl = document.getElementById('tour-sections');
+
+            const sectionObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        sections.forEach(s => s.classList.remove('active'));
+                        entry.target.classList.add('active');
+
+                        const face = parseInt(entry.target.dataset.face);
+                        rotateCubeToFace(face);
+                        markFaceVisited(face);
+
+                        // Update label
+                        cubeLabelText.textContent = FACE_LABELS[face] || '';
+                        cubeLabelText.style.color = FACE_CSS_COLORS[face] || 'var(--text-primary)';
+
+                        // Color bleed on tour border
+                        tourSectionsEl.classList.add('color-bleed');
+                        tourSectionsEl.style.setProperty('--bleed-color', FACE_CSS_RAW_COLORS[face] || 'transparent');
+
+                        // Update face nav
+                        if (inTourMode) updateFaceLines(face);
+
+                        const idx = Array.from(sections).indexOf(entry.target);
+                        steps.forEach((s, i) => s.classList.toggle('active', i === idx));
+
+                        // Show footer only on last section
+                        document.querySelector('.site-footer').classList.toggle('visible', idx === sections.length - 1);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '-20% 0px -50% 0px' });
+
+            sections.forEach(s => sectionObserver.observe(s));
+        }
+
+        function updateOnScroll(landing, header, progress, sections, steps) {
+            const landingBottom = landing.offsetTop + landing.offsetHeight;
+            const scrollY = window.scrollY;
+            const transitionStart = landingBottom - window.innerHeight * 0.95;
+
+            const scrollCue = document.getElementById('scroll-cue');
+            scrollCue.classList.toggle('hide', scrollY > transitionStart * 0.6);
+            const transitionEnd = landingBottom;
+
+            let t = 0;
+            if (scrollY > transitionStart) {
+                t = Math.min(1, (scrollY - transitionStart) / (transitionEnd - transitionStart));
+            }
+
+            // Interpolate camera position: zoom out and shift right so cube appears left
+            const camZ = CUBE_LANDING.z + (CUBE_TOUR.z - CUBE_LANDING.z) * t;
+            const camX = 5.0 * t;
+
+            if (t > 0) {
+                camera.position.x = camX;
+                camera.position.z = camZ;
+                camera.lookAt(camX, 0, 0);
+                cubeGroup.position.x = 0;
+            }
+
+            // Determine if we're in landing zone
+            inLanding = (t === 0);
+            const inTour = scrollY > landingBottom - 100;
+            inTourMode = inTour;
+
+            // Handle transition back to landing
+            if (inLanding && !wasInLanding) {
+                // Just returned to landing - reset cube
+                currentFace = -1;
+                controls.enabled = true;
+                document.getElementById('cube-canvas').classList.add('interactive');
+                document.getElementById('cube-canvas').classList.remove('clickable');
+                document.getElementById('cube-click-overlay').classList.remove('active');
+
+                // Clear color bleed
+                document.getElementById('tour-sections').classList.remove('color-bleed');
+                document.getElementById('tour-sections').style.removeProperty('--bleed-color');
+                document.getElementById('tour-sections').style.removeProperty('--scroll-progress');
+
+                // Reset camera to landing position
+                camera.position.set(CUBE_LANDING.x, CUBE_LANDING.y, CUBE_LANDING.z);
+                camera.lookAt(0, 0, 0);
+                cubeGroup.position.x = 0;
+                controls.target.set(0, 0, 0);
+                controls.update();
+
+                // Smoothly rotate back to default angle and re-scramble
+                const targetQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 5.5, -Math.PI / 4, 0));
+                const startQuat = cubeGroup.quaternion.clone();
+                const obj = { t: 0 };
+                new TWEEN.Tween(obj).to({ t: 1 }, 600)
+                    .easing(TWEEN.Easing.Cubic.InOut)
+                    .onUpdate(() => { cubeGroup.quaternion.slerpQuaternions(startQuat, targetQuat, obj.t); })
+                    .onComplete(() => { scrambleAndSolve(); })
+                    .start();
+
+                // Reset all section highlights
+                sections.forEach(s => s.classList.remove('active'));
+                steps.forEach(s => s.classList.remove('active'));
+            }
+
+            // Entering tour from landing
+            if (!inLanding && wasInLanding) {
+                controls.enabled = false;
+                document.getElementById('cube-canvas').classList.remove('interactive');
+                document.getElementById('cube-canvas').classList.add('clickable');
+                document.getElementById('cube-click-overlay').classList.add('active');
+            }
+
+            wasInLanding = inLanding;
+
+            header.classList.toggle('visible', inTour);
+            progress.classList.toggle('visible', inTour);
+            document.getElementById('cube-label').classList.toggle('visible', inTour);
+            if (!inTour) {
+                hideFaceLines();
+            } else if (leftLines.length > 0 && !leftLines[0].visible) {
+                // Lines not yet shown — trigger for the active section
+                const activeSec = document.querySelector('.section.active');
+                if (activeSec) {
+                    updateFaceLines(parseInt(activeSec.dataset.face));
+                }
+            }
+
+            sections.forEach(sec => {
+                const rect = sec.getBoundingClientRect();
+                const aligned = rect.top <= 49;
+                sec.classList.toggle('scroll-enabled', sec.classList.contains('active') && aligned);
+            });
+
+            // Scroll progress on color bleed border
+            if (inTour) {
+                const activeSec = document.querySelector('.section.active');
+                if (activeSec) {
+                    const rect = activeSec.getBoundingClientRect();
+                    const sectionH = activeSec.offsetHeight;
+                    const progress = Math.max(0, Math.min(1, -rect.top / (sectionH - window.innerHeight)));
+                    document.getElementById('tour-sections').style.setProperty('--scroll-progress', progress);
+                }
+            }
+        }
+
+        // === CUBE FACE ROTATION ===
+        let isMiniScrambling = false;
+
+        function rotateCubeToFace(faceIndex) {
+            if (faceIndex === currentFace) return;
+
+            // If scramble is running, cancel it and reset cubies
+            if (scrambleAnimating) {
+                stopScrambleAndReset();
+            }
+
+            // If a mini-scramble is in progress, cancel it and reset cubies
+            if (isMiniScrambling) {
+                TWEEN.removeAll();
+                resetCubiesToSolved();
+                isMiniScrambling = false;
+            }
+
+            const prevFace = currentFace;
+            currentFace = faceIndex;
+
+            const targetEuler = FACE_ROTATIONS[faceIndex];
+            if (!targetEuler) return;
+            const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler);
+
+            // Mini-scramble: do 2 quick random slice moves before rotating
+            if (prevFace >= 0) {
+                miniScrambleThenRotate(targetQuat);
+            } else {
+                smoothRotate(cubeGroup.quaternion.clone(), targetQuat);
+            }
+
+            // Glow active face
+            cubeGroup.children.forEach(cubie => {
+                if (!cubie.material || !Array.isArray(cubie.material)) return;
+                cubie.material.forEach((mat, idx) => {
+                    if (mat.color.getHex() === COLORS.black) return;
+                    const target = (idx === faceIndex) ? 0.45 : 0.05;
+                    new TWEEN.Tween(mat).to({ emissiveIntensity: target }, 500).start();
+                });
+            });
+        }
+
+        function resetCubiesToSolved() {
+            const gap = 1.02;
+            let i = 0;
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
+                    for (let z = -1; z <= 1; z++) {
+                        const mesh = cubeGroup.children[i];
+                        mesh.position.set(x * gap, y * gap, z * gap);
+                        mesh.quaternion.identity();
+                        i++;
+                    }
+                }
+            }
+        }
+
+        function smoothRotate(startQuat, targetQuat) {
+            const obj = { t: 0 };
+            new TWEEN.Tween(obj).to({ t: 1 }, 1000)
+                .easing(TWEEN.Easing.Cubic.InOut)
+                .onUpdate(() => {
+                    cubeGroup.quaternion.slerpQuaternions(startQuat, targetQuat, obj.t);
+                })
+                .start();
+        }
+
+        async function miniScrambleThenRotate(targetQuat) {
+            isMiniScrambling = true;
+
+            // Dim indicator lines during transition
+            dimFaceLines();
+
+            // Ensure cubies are in solved state before scrambling
+            resetCubiesToSolved();
+
+            const axes = ['x', 'y', 'z'];
+            const moves = [];
+            let lastAxis = '';
+            for (let i = 0; i < 2; i++) {
+                let axis;
+                do { axis = axes[Math.floor(Math.random() * 3)]; } while (axis === lastAxis);
+                lastAxis = axis;
+                const index = [-1, 0, 1][Math.floor(Math.random() * 3)];
+                const dir = Math.random() < 0.5 ? 1 : -1;
+                moves.push({ axis, index, dir });
+            }
+
+            // Do the scramble moves
+            for (const m of moves) {
+                if (!isMiniScrambling) return;
+                await rotateSlice(m.axis, m.index, m.dir, 100);
+            }
+
+            // Undo them
+            for (let i = moves.length - 1; i >= 0; i--) {
+                if (!isMiniScrambling) return;
+                const m = moves[i];
+                await rotateSlice(m.axis, m.index, -m.dir, 100);
+            }
+
+            if (!isMiniScrambling) return;
+            isMiniScrambling = false;
+
+            // Now slerp to target face
+            const currentQuat = cubeGroup.quaternion.clone();
+            const obj = { t: 0 };
+            new TWEEN.Tween(obj).to({ t: 1 }, 700)
+                .easing(TWEEN.Easing.Cubic.InOut)
+                .onUpdate(() => {
+                    cubeGroup.quaternion.slerpQuaternions(currentQuat, targetQuat, obj.t);
+                })
+                .onComplete(() => {
+                    // Update and brighten lines with new colors
+                    updateFaceLines(currentFace);
+                    brightenFaceLines();
+                })
+                .start();
+        }
+
+        // === CLICKABLE CUBE FACES (Raycasting) ===
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // Map face material index to section face index
+        // Material indices: 0=+X(red), 1=-X(orange), 2=+Y(white), 3=-Y(yellow), 4=+Z(green), 5=-Z(blue)
+        // Face indices in data: 0=red, 1=orange, 2=white, 3=yellow, 4=green, 5=blue
+        const MATERIAL_TO_FACE = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 };
+
+        function onCubeClick(event) {
+            if (inLanding) return;
+
+            const canvas = document.getElementById('cube-canvas');
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            // Check indicator lines first
+            const lineTargets = [...leftLines, ...topLines, ...bottomLines].filter(l => l && l.visible);
+            if (lineTargets.length > 0) {
+                const lineHits = raycaster.intersectObjects(lineTargets);
+                if (lineHits.length > 0) {
+                    const faceIdx = lineHits[0].object.userData.faceIdx;
+                    if (faceIdx !== null && faceIdx !== undefined) {
+                        const targetSection = document.querySelector(`.section[data-face="${faceIdx}"]`);
+                        if (targetSection) {
+                            targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                        return;
+                    }
+                }
+            }
+
+            // Then check main cube
+            const intersects = raycaster.intersectObjects(cubeGroup.children);
+            if (intersects.length > 0) {
+                const hit = intersects[0];
+                const faceIdx = Math.floor(hit.faceIndex / 2);
+                const materialIdx = faceIdx;
+                const mat = hit.object.material[materialIdx];
+                if (mat && mat.color.getHex() !== COLORS.black) {
+                    const sectionFace = MATERIAL_TO_FACE[materialIdx];
+                    const targetSection = document.querySelector(`.section[data-face="${sectionFace}"]`);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            }
+        }
+
+        document.getElementById('cube-click-overlay').addEventListener('click', onCubeClick);
+
+        // === HOVER PREVIEW ON INDICATOR LINES ===
+        const FACE_NAV_LABELS = { 0: 'Projects', 1: 'Experience', 2: 'About', 3: 'Connect', 4: 'News', 5: 'Research' };
+        const tooltip = document.getElementById('cube-hover-tooltip');
+        let hoveredFace = null;
+        let peekTween = null;
+        let lastHoveredCubie = null;
+
+        function getTargetQuatForCurrentFace() {
+            const targetEuler = FACE_ROTATIONS[currentFace];
+            if (!targetEuler) return cubeGroup.quaternion.clone();
+            return new THREE.Quaternion().setFromEuler(targetEuler);
+        }
+
+        // Tilt directions for peeking at adjacent faces
+        const PEEK_TILTS = {
+            left: new THREE.Euler(0, 0.45, 0),    // positive Y to reveal left
+            top: new THREE.Euler(0.2, 0, 0),     // positive X to reveal top
+            bottom: new THREE.Euler(-0.2, 0, 0), // negative X to reveal bottom
+        };
+
+        function getLineDirection(mesh) {
+            if (leftLines.includes(mesh)) return 'left';
+            if (topLines.includes(mesh)) return 'top';
+            if (bottomLines.includes(mesh)) return 'bottom';
+            return null;
+        }
+
+        function onOverlayMouseMove(event) {
+            if (inLanding) return;
+
+            const canvas = document.getElementById('cube-canvas');
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const lineTargets = [...leftLines, ...topLines, ...bottomLines].filter(l => l && l.visible);
+            const hits = raycaster.intersectObjects(lineTargets);
+
+            if (hits.length > 0) {
+                const hit = hits[0].object;
+                const faceIdx = hit.userData.faceIdx;
+                const direction = getLineDirection(hit);
+
+                if (faceIdx !== hoveredFace) {
+                    hoveredFace = faceIdx;
+
+                    // Show tooltip
+                    tooltip.textContent = FACE_NAV_LABELS[faceIdx] || '';
+                    tooltip.style.left = event.clientX + 12 + 'px';
+                    tooltip.style.top = event.clientY - 10 + 'px';
+                    tooltip.classList.add('visible');
+
+                    // Glow the hovered adjacent face
+                    cubeGroup.children.forEach(cubie => {
+                        if (!Array.isArray(cubie.material)) return;
+                        cubie.material.forEach((mat, idx) => {
+                            if (mat.color.getHex() === COLORS.black) return;
+                            if (idx === faceIdx) {
+                                mat.emissiveIntensity = 0.7;
+                            } else if (idx === currentFace) {
+                                mat.emissiveIntensity = 0.45;
+                            } else {
+                                mat.emissiveIntensity = 0.05;
+                            }
+                        });
+                    });
+
+                    // Peek tilt
+                    if (direction && !isMiniScrambling) {
+                        if (peekTween) peekTween.stop();
+                        const baseQuat = getTargetQuatForCurrentFace();
+                        cubeGroup.quaternion.copy(baseQuat);
+
+                        // Apply tilt in world space (screen-relative)
+                        const peekTilt = PEEK_TILTS[direction];
+                        const tiltQuat = new THREE.Quaternion().setFromEuler(peekTilt);
+                        // World-space tilt: tilt * base (pre-multiply)
+                        const targetQuat = tiltQuat.multiply(baseQuat.clone());
+
+                        const obj = { t: 0 };
+                        peekTween = new TWEEN.Tween(obj).to({ t: 1 }, 300)
+                            .easing(TWEEN.Easing.Cubic.Out)
+                            .onUpdate(() => {
+                                cubeGroup.quaternion.slerpQuaternions(baseQuat, targetQuat, obj.t);
+                            })
+                            .start();
+                    }
+                }
+
+                // Update tooltip position
+                tooltip.style.left = event.clientX + 12 + 'px';
+                tooltip.style.top = event.clientY - 10 + 'px';
+                document.getElementById('cube-click-overlay').style.cursor = 'pointer';
+            } else {
+                if (hoveredFace !== null) {
+                    hoveredFace = null;
+                    tooltip.classList.remove('visible');
+                    document.getElementById('cube-click-overlay').style.cursor = 'default';
+
+                    // Reset glow to default (only active face glows)
+                    cubeGroup.children.forEach(cubie => {
+                        if (!Array.isArray(cubie.material)) return;
+                        cubie.material.forEach((mat, idx) => {
+                            if (mat.color.getHex() === COLORS.black) return;
+                            mat.emissiveIntensity = (idx === currentFace) ? 0.45 : 0.05;
+                        });
+                    });
+
+                    // Snap back
+                    if (!isMiniScrambling) {
+                        if (peekTween) peekTween.stop();
+                        const startQuat = cubeGroup.quaternion.clone();
+                        const targetQuat = getTargetQuatForCurrentFace();
+                        const obj = { t: 0 };
+                        peekTween = new TWEEN.Tween(obj).to({ t: 1 }, 300)
+                            .easing(TWEEN.Easing.Cubic.Out)
+                            .onUpdate(() => {
+                                cubeGroup.quaternion.slerpQuaternions(startQuat, targetQuat, obj.t);
+                            })
+                            .start();
+                    }
+                }
+
+                // Cubelet hover glow
+                const cubeHits = raycaster.intersectObjects(cubeGroup.children);
+                if (cubeHits.length > 0) {
+                    const hitCubie = cubeHits[0].object;
+                    if (hitCubie !== lastHoveredCubie) {
+                        // Reset previous
+                        if (lastHoveredCubie && Array.isArray(lastHoveredCubie.material)) {
+                            lastHoveredCubie.material.forEach((mat, idx) => {
+                                if (mat.color.getHex() !== COLORS.black) {
+                                    const base = (idx === currentFace) ? 0.45 : 0.05;
+                                    mat.emissiveIntensity = base;
+                                }
+                            });
+                        }
+                        lastHoveredCubie = hitCubie;
+                        if (Array.isArray(hitCubie.material)) {
+                            hitCubie.material.forEach((mat, idx) => {
+                                if (mat.color.getHex() !== COLORS.black) {
+                                    mat.emissiveIntensity = 0.8;
+                                }
+                            });
+                        }
+                    }
+                } else {
+                    if (lastHoveredCubie && Array.isArray(lastHoveredCubie.material)) {
+                        lastHoveredCubie.material.forEach((mat, idx) => {
+                            if (mat.color.getHex() !== COLORS.black) {
+                                const base = (idx === currentFace) ? 0.45 : 0.05;
+                                mat.emissiveIntensity = base;
+                            }
+                        });
+                        lastHoveredCubie = null;
+                    }
+                }
+            }
+        }
+
+        document.getElementById('cube-click-overlay').addEventListener('mousemove', onOverlayMouseMove);
+        document.getElementById('cube-click-overlay').addEventListener('mouseleave', () => {
+            if (hoveredFace !== null) {
+                hoveredFace = null;
+                tooltip.classList.remove('visible');
+                document.getElementById('cube-click-overlay').style.cursor = 'default';
+
+                // Reset glow
+                cubeGroup.children.forEach(cubie => {
+                    if (!Array.isArray(cubie.material)) return;
+                    cubie.material.forEach((mat, idx) => {
+                        if (mat.color.getHex() === COLORS.black) return;
+                        mat.emissiveIntensity = (idx === currentFace) ? 0.45 : 0.05;
+                    });
+                });
+
+                if (!isMiniScrambling) {
+                    if (peekTween) peekTween.stop();
+                    const startQuat = cubeGroup.quaternion.clone();
+                    const targetQuat = getTargetQuatForCurrentFace();
+                    const obj = { t: 0 };
+                    peekTween = new TWEEN.Tween(obj).to({ t: 1 }, 300)
+                        .easing(TWEEN.Easing.Cubic.Out)
+                        .onUpdate(() => {
+                            cubeGroup.quaternion.slerpQuaternions(startQuat, targetQuat, obj.t);
+                        })
+                        .start();
+                }
+            }
+        });
+
+        // === FACE INDICATOR LINES ===
+        // For each front face, define which face is on the left
+        // The left face is opposite to the right face
+        // Standard cube: when green faces you, red is right, orange is left
+        // Face indices: 0=red(+X), 1=orange(-X), 2=white(+Y), 3=yellow(-Y), 4=green(+Z), 5=blue(-Z)
+        const FACE_OPPOSITES = { 0: 1, 1: 0, 2: 3, 3: 2, 4: 5, 5: 4 };
+
+        // What face is on the RIGHT when each face is front (based on FACE_ROTATIONS)
+        const FACE_RIGHT = {
+            2: 0,  // white front -> red right
+            4: 0,  // green front -> red right
+            1: 4,  // orange front -> green right
+            5: 1,  // blue front -> orange right
+            0: 5,  // red front -> blue right
+            3: 0,  // yellow front -> red right
+        };
+
+        // What face is on TOP when each face is front
+        const FACE_TOP = {
+            2: 5,  // white front -> blue top
+            4: 2,  // green front -> white top
+            1: 2,  // orange front -> white top
+            5: 2,  // blue front -> white top
+            0: 2,  // red front -> white top
+            3: 4,  // yellow front -> green top
+        };
+
+        // Left is opposite of right, bottom is opposite of top
+        const FACE_NEIGHBORS = {};
+        Object.keys(FACE_RIGHT).forEach(k => {
+            FACE_NEIGHBORS[k] = {
+                left: FACE_OPPOSITES[FACE_RIGHT[k]],
+                top: FACE_TOP[k],
+                bottom: FACE_OPPOSITES[FACE_TOP[k]]
+            };
+        });
+
+        const FACE_LINE_COLORS = {
+            0: 0xef4444, 1: 0xf97316, 2: 0xe4e4e7, 3: 0xeab308, 4: 0x22c55e, 5: 0x3b82f6
+        };
+
+        let leftLines = [];
+        let topLines = [];
+        let bottomLines = [];
+        let linesGroup = null;
+
+        function createFaceLines() {
+            linesGroup = new THREE.Group();
+            scene.add(linesGroup);
+
+            const cubeletSize = 0.92;
+            const gap = 1.02;
+            const lineWidth = 0.12;
+            const vertGeo = new THREE.PlaneGeometry(lineWidth, cubeletSize);
+            const horizGeo = new THREE.PlaneGeometry(cubeletSize, lineWidth);
+            // Positions relative to cube center
+            const xPos = -1.48 - 0.3;
+            const yTop = 1.48 + 0.3;
+            const yBottom = -1.48 - 0.3;
+            const zPos = 1.6;
+
+            for (let i = -1; i <= 1; i++) {
+                // Left lines (vertical)
+                const left = new THREE.Mesh(vertGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+                left.position.set(xPos, i * gap, zPos);
+                left.visible = false;
+                left.userData.faceIdx = null;
+                linesGroup.add(left);
+                leftLines.push(left);
+
+                // Top lines (horizontal)
+                const top = new THREE.Mesh(horizGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+                top.position.set(i * gap, yTop, zPos);
+                top.visible = false;
+                top.userData.faceIdx = null;
+                linesGroup.add(top);
+                topLines.push(top);
+
+                // Bottom lines (horizontal)
+                const bottom = new THREE.Mesh(horizGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+                bottom.position.set(i * gap, yBottom, zPos);
+                bottom.visible = false;
+                bottom.userData.faceIdx = null;
+                linesGroup.add(bottom);
+                bottomLines.push(bottom);
+            }
+        }
+
+        function updateFaceLines(activeFace) {
+            const neighbors = FACE_NEIGHBORS[activeFace];
+            if (!neighbors) return;
+
+            const leftFace = neighbors.left;
+            leftLines.forEach(mesh => {
+                mesh.material.color.setHex(FACE_LINE_COLORS[leftFace]);
+                mesh.userData.faceIdx = leftFace;
+                mesh.visible = true;
+            });
+
+            const topFace = neighbors.top;
+            topLines.forEach(mesh => {
+                mesh.material.color.setHex(FACE_LINE_COLORS[topFace]);
+                mesh.userData.faceIdx = topFace;
+                mesh.visible = true;
+            });
+
+            const bottomFace = neighbors.bottom;
+            bottomLines.forEach(mesh => {
+                mesh.material.color.setHex(FACE_LINE_COLORS[bottomFace]);
+                mesh.userData.faceIdx = bottomFace;
+                mesh.visible = true;
+            });
+        }
+
+        function hideFaceLines() {
+            [...leftLines, ...topLines, ...bottomLines].forEach(mesh => { mesh.visible = false; });
+        }
+
+        function dimFaceLines() {
+            [...leftLines, ...topLines, ...bottomLines].forEach(mesh => {
+                mesh.material.opacity = 0.2;
+                mesh.material.transparent = true;
+            });
+        }
+
+        function brightenFaceLines() {
+            [...leftLines, ...topLines, ...bottomLines].forEach(mesh => {
+                mesh.material.opacity = 1;
+                mesh.material.transparent = false;
+            });
+        }
+
+        // face lines initialized in init()
+
+        // === IDLE FIDGET ANIMATION ===
+        let idleTimeout = null;
+        let isIdleFidgeting = false;
+
+        function resetIdleTimer() {
+            if (idleTimeout) clearTimeout(idleTimeout);
+            if (!inLanding && inTourMode && !isMiniScrambling && !isIdleFidgeting) {
+                idleTimeout = setTimeout(doIdleFidget, 8000);
+            }
+        }
+
+        async function doIdleFidget() {
+            if (inLanding || isMiniScrambling || isIdleFidgeting) return;
+            isIdleFidgeting = true;
+            const axes = ['x', 'y', 'z'];
+            const axis = axes[Math.floor(Math.random() * 3)];
+            const index = [-1, 0, 1][Math.floor(Math.random() * 3)];
+            const dir = Math.random() < 0.5 ? 1 : -1;
+            await rotateSlice(axis, index, dir, 400);
+            await sleep(200);
+            await rotateSlice(axis, index, -dir, 400);
+            isIdleFidgeting = false;
+            if (!inLanding && inTourMode) {
+                idleTimeout = setTimeout(doIdleFidget, 8000);
+            }
+        }
+
+        window.addEventListener('scroll', resetIdleTimer, { passive: true });
+        window.addEventListener('mousemove', resetIdleTimer, { passive: true });
+
+        // === VISIT-ALL-FACES CELEBRATION ===
+        const visitedFaces = new Set();
+        let celebrationDone = false;
+
+        function markFaceVisited(faceIndex) {
+            if (celebrationDone) return;
+            visitedFaces.add(faceIndex);
+            if (visitedFaces.size === 6) {
+                celebrationDone = true;
+                setTimeout(celebrateAllVisited, 1500);
+            }
+        }
+
+        async function celebrateAllVisited() {
+            if (isMiniScrambling || isIdleFidgeting) return;
+            const moves = generateScramble();
+            for (const m of moves) {
+                await rotateSlice(m.axis, m.index, m.dir, 80);
+            }
+            await sleep(200);
+            for (let i = moves.length - 1; i >= 0; i--) {
+                await rotateSlice(moves[i].axis, moves[i].index, -moves[i].dir, 60);
+            }
+            // Flash all faces
+            cubeGroup.children.forEach(cubie => {
+                if (!Array.isArray(cubie.material)) return;
+                cubie.material.forEach(mat => {
+                    if (mat.color.getHex() !== COLORS.black) {
+                        mat.emissiveIntensity = 0.9;
+                        new TWEEN.Tween(mat).to({ emissiveIntensity: 0.05 }, 1200).easing(TWEEN.Easing.Cubic.Out).start();
+                    }
+                });
+            });
+            // Brief message
+            const msg = document.createElement('div');
+            msg.textContent = '✓ All explored';
+            msg.style.cssText = 'position:fixed;left:18vw;bottom:2.5rem;transform:translateX(-50%);font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-secondary);opacity:0;transition:opacity 0.5s;z-index:60;';
+            document.body.appendChild(msg);
+            requestAnimationFrame(() => { msg.style.opacity = '1'; });
+            setTimeout(() => { msg.style.opacity = '0'; setTimeout(() => msg.remove(), 500); }, 3000);
+        }
+
+        // === RENDER LOOP ===
+        function animate(time) {
+            requestAnimationFrame(animate);
+            TWEEN.update(time);
+
+            if (controls.enabled) {
+                controls.update();
+            }
+
+            if (cubeGroup) {
+                const floatY = Math.sin((time || 0) * 0.0008) * 0.06;
+                cubeGroup.position.y = floatY;
+                leftLines.forEach((mesh, i) => {
+                    // positions are relative to linesGroup, no need to update
+                });
+                // linesGroup follows cube position only
+                if (linesGroup) {
+                    linesGroup.position.copy(cubeGroup.position);
+                }
+
+                if (inLanding && !scrambleAnimating) {
+                    cubeGroup.rotation.y += 0.0015;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // === PARTICLES ===
+        function initParticles() {
+            const canvas = document.getElementById('particle-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const PARTICLE_COUNT = 800;
+            const colors = ['#3b82f6', '#22c55e', '#f97316', '#ef4444', '#eab308', '#e4e4e7'];
+            let w = 0, h = 0;
+
+            function resize() {
+                w = window.innerWidth;
+                h = window.innerHeight;
+                canvas.width = w * window.devicePixelRatio;
+                canvas.height = h * window.devicePixelRatio;
+                canvas.style.width = w + 'px';
+                canvas.style.height = h + 'px';
+                ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+            }
+
+            function createParticle() {
+                return {
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    size: Math.random() * 1.5 + 0.5,
+                    speedX: (Math.random() - 0.5) * 0.3,
+                    speedY: (Math.random() - 0.5) * 0.3,
+                    opacity: Math.random() * 0.4 + 0.1,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    pulse: Math.random() * Math.PI * 2,
+                };
+            }
+
+            function init() {
+                resize();
+                particles = Array.from({ length: PARTICLE_COUNT }, createParticle);
+            }
+
+            let mouseX = -1000, mouseY = -1000;
+            document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+
+            function draw() {
+                ctx.clearRect(0, 0, w, h);
+                particles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    p.pulse += 0.02;
+
+                    if (p.x < 0) p.x = w;
+                    if (p.x > w) p.x = 0;
+                    if (p.y < 0) p.y = h;
+                    if (p.y > h) p.y = 0;
+
+                    const dx = p.x - mouseX;
+                    const dy = p.y - mouseY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const proximity = Math.max(0, 1 - dist / 120);
+
+                    const baseOpacity = p.opacity * (0.6 + 0.4 * Math.sin(p.pulse));
+                    const boostedOpacity = baseOpacity + proximity * 0.4;
+                    const boostedSize = p.size + proximity * 1.5;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, boostedSize, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = Math.min(1, boostedOpacity);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+                requestAnimationFrame(draw);
+            }
+
+            init();
+            draw();
+            window.addEventListener('resize', () => { resize(); particles.forEach(p => { p.x = Math.random() * w; p.y = Math.random() * h; }); });
+        }
+
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, 0);
+        // === CURSOR GLOW ON LANDING (removed) ===
+
+        initParticles();
+        init();
+
+    })();
+    </script>
 </body>
-
-
 </html>

@@ -1,0 +1,340 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RoPE Visualizer (Unit Circle + Angles)</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #121822;
+    --ink: #e8eef7;
+    --muted: #9fb0c9;
+    --accent: #6ea8fe;
+    --grid: #2a3444;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+  .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  h1 { font-size: 20px; margin: 0 0 12px 0; font-weight: 700; letter-spacing: 0.2px; }
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    gap: 12px;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 12px;
+    align-items: center;
+  }
+  .ctrl { display: grid; gap: 6px; }
+  .ctrl label { font-size: 12px; color: var(--muted); }
+  input[type="range"] { width: 100%; }
+  input[type="number"] { width: 100%; padding: 6px 8px; border-radius: 8px; border: 1px solid #334; background: #0f1420; color: var(--ink); }
+  .btn {
+    background: var(--accent);
+    color: #051024;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .row {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 12px;
+  }
+  .panel {
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  canvas { width: 100%; height: 420px; display: block; }
+  #angles { height: 420px; }
+  .caption {
+    position: absolute; left: 10px; top: 8px; font-size: 12px; color: var(--muted);
+  }
+  details {
+    margin-top: 10px;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  code { color: #c7e1ff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>RoPE Visualizer — Unit Circle & Angle Evolution</h1>
+  <div class="controls">
+    <div class="ctrl">
+      <label for="dim">dimension (even 2–64)</label>
+      <input id="dim" type="range" min="2" max="64" step="2" value="8"/>
+    </div>
+    <div class="ctrl">
+      <label for="pos">position</label>
+      <input id="pos" type="range" min="0" max="4096" step="1" value="50"/>
+    </div>
+    <div class="ctrl">
+      <label for="base">base (default 10000)</label>
+      <input id="base" type="number" min="2" max="1000000" step="1" value="10000"/>
+    </div>
+    <div class="ctrl">
+      <label>&nbsp;</label>
+      <button id="play" class="btn">Play</button>
+    </div>
+    <div class="ctrl">
+      <label><input id="wrap" type="checkbox" checked/> wrap angles to [−π, π]</label>
+      <label><input id="showLegend" type="checkbox"/> show legend (may clutter)</label>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="panel">
+      <div class="caption">Unit circle @ pos=<span id="posLabel">50</span>, d=<span id="dimLabel">8</span></div>
+      <canvas id="unit"></canvas>
+    </div>
+    <div class="panel">
+      <div class="caption">Angles 0..pos (<span id="wrapLabel">wrapped</span>)</div>
+      <canvas id="angles"></canvas>
+    </div>
+  </div>
+
+  <details>
+    <summary>How this works</summary>
+    <p>For even dimension <code>d</code>, RoPE rotates each 2D pair by angle <code>θ<sub>k</sub>(p) = p · base<sup>−2k/d</sup></code> where <code>k = 0..(d/2 − 1)</code> and <code>p</code> is the token position. The left plot shows the rotation of each pair on the unit circle at a chosen position; the right plot shows how each pair’s angle evolves from 0 to the current position. Checking “wrap” displays angles mapped into [−π, π].</p>
+  </details>
+</div>
+
+<script>
+(function(){
+  const unit = document.getElementById('unit');
+  const angles = document.getElementById('angles');
+  const dim = document.getElementById('dim');
+  const pos = document.getElementById('pos');
+  const base = document.getElementById('base');
+  const wrapChk = document.getElementById('wrap');
+  const showLegend = document.getElementById('showLegend');
+  const playBtn = document.getElementById('play');
+  const posLabel = document.getElementById('posLabel');
+  const dimLabel = document.getElementById('dimLabel');
+  const wrapLabel = document.getElementById('wrapLabel');
+
+  const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+
+  function setupCanvas(cnv) {
+    const rect = cnv.getBoundingClientRect();
+    cnv.width = Math.floor(rect.width * DPR);
+    cnv.height = Math.floor(rect.height * DPR);
+    const ctx = cnv.getContext('2d');
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    return ctx;
+  }
+
+  let ctxUnit = setupCanvas(unit);
+  let ctxAngles = setupCanvas(angles);
+  window.addEventListener('resize', () => {
+    ctxUnit = setupCanvas(unit);
+    ctxAngles = setupCanvas(angles);
+    requestRender();
+  });
+
+  // math helpers
+  const TAU = Math.PI * 2;
+  const PI = Math.PI;
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const wrapPi = (a) => {
+    // map to [-PI, PI]
+    a = (a + PI) % (TAU);
+    if (a < 0) a += TAU;
+    return a - PI;
+  };
+
+  function invFreqs(d, base) {
+    const out = new Array(d/2);
+    for (let k = 0; k < d/2; k++) {
+      out[k] = Math.pow(base, -2 * k / d);
+    }
+    return out;
+  }
+
+  function colorFor(k, n) {
+    // spectral-ish palette: hue cycles across pairs
+    const hue = (k / Math.max(1, n)) * 300; // 0..300 deg
+    return `hsl(${hue}, 75%, 65%)`;
+  }
+
+  function drawGrid(ctx, W, H, xpad, ypad) {
+    ctx.save();
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid');
+    ctx.lineWidth = 1;
+    // verticals
+    for (let f = 0; f <= 10; f++) {
+      const x = xpad + (W - 2*xpad) * f / 10;
+      ctx.beginPath(); ctx.moveTo(x, ypad); ctx.lineTo(x, H - ypad); ctx.stroke();
+    }
+    // horizontals
+    for (let f = 0; f <= 6; f++) {
+      const y = ypad + (H - 2*ypad) * f / 6;
+      ctx.beginPath(); ctx.moveTo(xpad, y); ctx.lineTo(W - xpad, y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawUnitCircle() {
+    const W = unit.clientWidth, H = unit.clientHeight;
+    const ctx = ctxUnit;
+    ctx.clearRect(0, 0, W, H);
+    const cx = W/2, cy = H/2;
+    const r = Math.min(W, H)/2 - 24;
+
+    // axes
+    ctx.strokeStyle = '#2b3b52'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(cx - r - 4, cy); ctx.lineTo(cx + r + 4, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy - r - 4); ctx.lineTo(cx, cy + r + 4); ctx.stroke();
+
+    // circle
+    ctx.setLineDash([6,6]); ctx.strokeStyle = '#3a4a63';
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+
+    const d = parseInt(dim.value, 10);
+    const p = parseInt(pos.value, 10);
+    const baseVal = parseFloat(base.value);
+    const inv = invFreqs(d, baseVal);
+
+    for (let k = 0; k < d/2; k++) {
+      const theta = p * inv[k];
+      const x = Math.cos(theta), y = Math.sin(theta);
+      ctx.strokeStyle = colorFor(k, d/2);
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + r*x, cy - r*y); ctx.stroke();
+      ctx.fillStyle = colorFor(k, d/2);
+      ctx.beginPath(); ctx.arc(cx + r*x, cy - r*y, 4, 0, TAU); ctx.fill();
+    }
+
+    if (showLegend.checked && d/2 <= 24) {
+      ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.textBaseline = 'top';
+      let x0 = 10, y0 = 10;
+      for (let k = 0; k < d/2; k++) {
+        ctx.fillStyle = colorFor(k, d/2);
+        ctx.fillRect(x0, y0 + 16*k, 10, 10);
+        ctx.fillStyle = '#cbd6e9';
+        ctx.fillText(`pair ${k}`, x0 + 16, y0 + 16*k - 2 + 12);
+      }
+    }
+  }
+
+  function drawAngles() {
+    const W = angles.clientWidth, H = angles.clientHeight;
+    const ctx = ctxAngles;
+    ctx.clearRect(0, 0, W, H);
+    const xpad = 40, ypad = 24;
+
+    drawGrid(ctx, W, H, xpad, ypad);
+
+    const d = parseInt(dim.value, 10);
+    const pmax = parseInt(pos.value, 10);
+    const baseVal = parseFloat(base.value);
+    const inv = invFreqs(d, baseVal);
+    const wrap = wrapChk.checked;
+    wrapLabel.textContent = wrap ? 'wrapped' : 'unwrapped';
+
+    // y mapping
+    const ymin = wrap ? -Math.PI : 0;
+    const ymax = wrap ?  Math.PI : Math.max(1e-6, pmax * inv[0]); // unwrapped rough scale
+
+    function X(x) { return xpad + (W - 2*xpad) * (x / Math.max(1, pmax)); }
+    function Y(y) { return H - ypad - (H - 2*ypad) * ((y - ymin) / (ymax - ymin || 1)); }
+
+    // zero line
+    ctx.strokeStyle = '#8aa3c8'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(pmax), Y(0)); ctx.stroke();
+
+    // each pair
+    for (let k = 0; k < d/2; k++) {
+      ctx.strokeStyle = colorFor(k, d/2); ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      let started = false;
+      const step = Math.max(1, Math.floor(pmax / 2000)); // throttle density
+      for (let p = 0; p <= pmax; p += step) {
+        let th = p * inv[k];
+        if (wrap) th = wrapPi(th);
+        const x = X(p), y = Y(th);
+        if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+      }
+      ctx.stroke();
+    }
+
+    // axes labels
+    ctx.fillStyle = '#9fb0c9'; ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto';
+    ctx.fillText('Position', W - xpad - 60, H - 6);
+    ctx.save();
+    ctx.translate(12, H/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText(wrap ? 'Angle (radians), wrapped [−π, π]' : 'Angle (radians), unwrapped', 0, 0);
+    ctx.restore();
+
+    // ticks (y)
+    const yTicks = wrap ? [-Math.PI, -Math.PI/2, 0, Math.PI/2, Math.PI] : [0, (ymax)/2, ymax];
+    ctx.fillStyle = '#9fb0c9';
+    yTicks.forEach(val => {
+      const y = Y(val);
+      ctx.beginPath(); ctx.moveTo(xpad-4, y); ctx.lineTo(xpad, y); ctx.strokeStyle = '#9fb0c9'; ctx.stroke();
+      const label = (Math.abs(val) < 1e-6) ? '0' :
+                    (Math.abs(val - Math.PI) < 1e-6) ? 'π' :
+                    (Math.abs(val + Math.PI) < 1e-6) ? '−π' :
+                    (Math.abs(val - Math.PI/2) < 1e-6) ? 'π/2' :
+                    (Math.abs(val + Math.PI/2) < 1e-6) ? '−π/2' :
+                    val.toFixed(2);
+      ctx.fillText(label, 8, y + 3);
+    });
+  }
+
+  let rafId = 0;
+  function requestRender() {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      posLabel.textContent = pos.value;
+      dimLabel.textContent = dim.value;
+      drawUnitCircle();
+      drawAngles();
+    });
+  }
+
+  // Animation
+  let playing = false;
+  let timer = 0;
+  function tick() {
+    if (!playing) return;
+    const cur = parseInt(pos.value, 10);
+    const next = (cur + 5) % parseInt(pos.max, 10);
+    pos.value = String(next);
+    requestRender();
+    timer = setTimeout(tick, 30);
+  }
+  playBtn.addEventListener('click', () => {
+    playing = !playing;
+    playBtn.textContent = playing ? 'Pause' : 'Play';
+    if (playing) tick(); else clearTimeout(timer);
+  });
+
+  [dim, pos, base, wrapChk, showLegend].forEach(el => el.addEventListener('input', requestRender));
+  requestRender();
+})();
+</script>
+</body>
+</html>

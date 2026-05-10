@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PagedAttention Interactive Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #764ba2;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .intro {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #667eea;
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .interactive-box {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .highlight-box {
+            background: #fff9e6;
+            border-left: 5px solid #ffd93d;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .formula {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+            border: 1px solid #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+        }
+
+        .memory-visualization {
+            display: grid;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .memory-system {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .memory-system h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            gap: 3px;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .memory-block {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .memory-block:hover {
+            transform: scale(1.2);
+            z-index: 100;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .memory-block.free {
+            background: #e9ecef;
+            color: #adb5bd;
+        }
+
+        .memory-block.allocated {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .memory-block.wasted {
+            background: repeating-linear-gradient(
+                45deg,
+                #ff6b6b,
+                #ff6b6b 10px,
+                #ff8787 10px,
+                #ff8787 20px
+            );
+            color: white;
+        }
+
+        .memory-block.fragmented {
+            background: #ffd93d;
+            color: #333;
+        }
+
+        .request-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .request-name {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .request-info {
+            font-size: 0.9em;
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .request-blocks {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .block-chip {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+            background: #667eea;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-value.bad {
+            color: #ff6b6b;
+        }
+
+        .stat-value.good {
+            color: #51cf66;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            background: white;
+        }
+
+        .comparison-table tr:hover td {
+            background: #f8f9ff;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .legend-color {
+            width: 25px;
+            height: 25px;
+            border-radius: 4px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        input[type="number"], select {
+            padding: 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1em;
+            width: 150px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #555;
+            margin-right: 10px;
+        }
+
+        .side-by-side {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        @media (max-width: 1200px) {
+            .side-by-side {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .page-table {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .page-table-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .page-table-row.header {
+            background: #667eea;
+            color: white;
+            font-weight: 700;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .page-table-row:hover:not(.header) {
+            background: #f8f9ff;
+        }
+
+        .arrow-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85em;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .animation-controls {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .timeline-viz {
+            margin: 30px 0;
+        }
+
+        .timeline-step {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .timeline-step.active {
+            border-left-color: #51cf66;
+            background: #f0fff4;
+        }
+
+        .code-example {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .keyword { color: #ff79c6; }
+        .string { color: #f1fa8c; }
+        .comment { color: #6272a4; }
+        .function { color: #50fa7b; }
+        .number { color: #bd93f9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 PagedAttention: Virtual Memory for KV Cache</h1>
+        <div class="intro">
+            <p><strong>The Big Idea:</strong> Apply operating system virtual memory techniques to KV cache management.</p>
+            <p>Just like your OS uses paging to efficiently manage RAM, vLLM uses PagedAttention to efficiently manage GPU memory for KV cache.</p>
+            <p><strong>Result:</strong> 10-20x better throughput with the same hardware!</p>
+        </div>
+
+        <!-- Section 1: The Problem Recap -->
+        <div class="section">
+            <h2>⚠️ Part 1: The Traditional Approach (And Its Problems)</h2>
+            <p>Let's first see how traditional inference systems (like HuggingFace Transformers) manage KV cache memory.</p>
+
+            <div class="interactive-box">
+                <h3>Problem 1: Static Pre-allocation</h3>
+                <p>Traditional systems allocate memory based on the <strong>maximum sequence length</strong>, not the actual length needed.</p>
+
+                <div class="highlight-box">
+                    <h4>Example Scenario:</h4>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li>Model supports max 4096 tokens</li>
+                        <li>User request: 100-token prompt, generates 50 tokens = 150 tokens total</li>
+                        <li>Memory allocated: 4096 tokens worth (27x more than needed!)</li>
+                        <li>Memory actually used: 150 tokens worth</li>
+                        <li><strong style="color: #ff6b6b;">Wasted: 96% of allocated memory</strong></li>
+                    </ul>
+                </div>
+
+                <div class="formula">
+                    Efficiency = actual_tokens / max_tokens = 150 / 4096 = 3.6%
+                </div>
+            </div>
+
+            <div class="interactive-box">
+                <h3>Problem 2: Memory Fragmentation</h3>
+                <p>Even with dynamic allocation (allocating exactly what's needed), memory becomes fragmented over time.</p>
+
+                <div style="margin: 20px 0;">
+                    <h4>Fragmentation Example:</h4>
+                    <div style="background: white; padding: 20px; border-radius: 8px; margin: 15px 0;">
+                        <p><strong>Step 1:</strong> Allocate contiguous memory for 3 requests</p>
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #667eea;"></div>
+                                <span>Request A (500 tokens)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #51cf66;"></div>
+                                <span>Request B (800 tokens)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #ff6b6b;"></div>
+                                <span>Request C (600 tokens)</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 5px; margin: 10px 0;">
+                            <div style="background: #667eea; height: 50px; flex: 500; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">A (500)</div>
+                            <div style="background: #51cf66; height: 50px; flex: 800; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">B (800)</div>
+                            <div style="background: #ff6b6b; height: 50px; flex: 600; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">C (600)</div>
+                            <div style="background: #e9ecef; height: 50px; flex: 100; display: flex; align-items: center; justify-content: center; color: #adb5bd;">Free</div>
+                        </div>
+
+                        <p><strong>Step 2:</strong> Request B finishes → leaves a 800-token hole</p>
+                        <div style="display: flex; gap: 5px; margin: 10px 0;">
+                            <div style="background: #667eea; height: 50px; flex: 500; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">A (500)</div>
+                            <div style="background: #ffd93d; height: 50px; flex: 800; display: flex; align-items: center; justify-content: center; color: #333; font-weight: 600;">FREE (800)</div>
+                            <div style="background: #ff6b6b; height: 50px; flex: 600; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">C (600)</div>
+                            <div style="background: #e9ecef; height: 50px; flex: 100; display: flex; align-items: center; justify-content: center; color: #adb5bd;">Free</div>
+                        </div>
+
+                        <p><strong>Step 3:</strong> New Request D needs 1000 tokens</p>
+                        <div style="display: flex; gap: 5px; margin: 10px 0;">
+                            <div style="background: #667eea; height: 50px; flex: 500; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">A (500)</div>
+                            <div style="background: repeating-linear-gradient(45deg, #ffd93d, #ffd93d 10px, #ffec99 10px, #ffec99 20px); height: 50px; flex: 800; display: flex; align-items: center; justify-content: center; color: #333; font-weight: 600;">WASTED (800)</div>
+                            <div style="background: #ff6b6b; height: 50px; flex: 600; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">C (600)</div>
+                            <div style="background: #e9ecef; height: 50px; flex: 100; display: flex; align-items: center; justify-content: center; color: #adb5bd;">Free (100)</div>
+                        </div>
+
+                        <div class="highlight-box">
+                            <strong>❌ Problem:</strong> Request D needs 1000 tokens, but:
+                            <ul style="margin-left: 20px; line-height: 1.8;">
+                                <li>The 800-token hole isn't big enough</li>
+                                <li>The 100-token free space isn't big enough</li>
+                                <li>Total free = 900 tokens, but they're <strong>fragmented</strong></li>
+                                <li>Can't allocate contiguous 1000 tokens!</li>
+                            </ul>
+                            <p style="margin-top: 10px;"><strong>800 tokens of perfectly usable memory sits wasted!</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="interactive-box">
+                <h3>The Real-World Impact</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Traditional Approach</th>
+                            <th>Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Memory Efficiency</strong></td>
+                            <td>20-40%</td>
+                            <td>60-80% of GPU memory wasted</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Batch Size</strong></td>
+                            <td>8-16 requests</td>
+                            <td>Can't serve many users simultaneously</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Throughput</strong></td>
+                            <td>Baseline</td>
+                            <td>Low requests/second</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cost Efficiency</strong></td>
+                            <td>High $/token</td>
+                            <td>Expensive to operate</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 2: OS Virtual Memory Primer -->
+        <div class="section">
+            <h2>💡 Part 2: Inspiration from Operating Systems</h2>
+            <p>Before diving into PagedAttention, let's understand how operating systems solve this exact problem for RAM.</p>
+
+            <div class="interactive-box">
+                <h3>How Your OS Manages Memory</h3>
+                <p>Operating systems use <strong>virtual memory with paging</strong> to efficiently manage RAM:</p>
+
+                <div style="margin: 25px 0;">
+                    <h4 style="color: #667eea;">Key Concepts:</h4>
+                    <div style="background: white; padding: 20px; border-radius: 8px; margin: 15px 0;">
+                        <div style="margin: 15px 0;">
+                            <h4>1. Fixed-Size Pages</h4>
+                            <p>Memory is divided into fixed-size blocks called <strong>pages</strong> (typically 4KB).</p>
+                            <div style="display: flex; gap: 5px; margin: 10px 0;">
+                                <div style="background: #667eea; height: 40px; width: 60px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8em; border-radius: 4px;">Page 0</div>
+                                <div style="background: #667eea; height: 40px; width: 60px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8em; border-radius: 4px;">Page 1</div>
+                                <div style="background: #667eea; height: 40px; width: 60px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8em; border-radius: 4px;">Page 2</div>
+                                <div style="background: #667eea; height: 40px; width: 60px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8em; border-radius: 4px;">Page 3</div>
+                                <div style="color: #adb5bd; display: flex; align-items: center;">...</div>
+                            </div>
+                        </div>
+
+                        <div style="margin: 15px 0;">
+                            <h4>2. Virtual Addresses → Physical Addresses</h4>
+                            <p>Programs use <strong>virtual addresses</strong> (contiguous), OS maps them to <strong>physical addresses</strong> (can be non-contiguous).</p>
+                            <div class="formula">
+                                Process thinks: "My data is at addresses 0-7KB (contiguous)"<br>
+                                Reality: Page 0 → Physical frame 5, Page 1 → Physical frame 2 (non-contiguous!)
+                            </div>
+                        </div>
+
+                        <div style="margin: 15px 0;">
+                            <h4>3. Page Table</h4>
+                            <p>A lookup table that maps virtual pages to physical frames.</p>
+                            <div style="background: #f8f9ff; padding: 15px; border-radius: 8px; margin: 10px 0; font-family: 'Courier New', monospace; font-size: 0.9em;">
+                                Virtual Page 0 → Physical Frame 5<br>
+                                Virtual Page 1 → Physical Frame 2<br>
+                                Virtual Page 2 → Physical Frame 9<br>
+                                Virtual Page 3 → Physical Frame 1
+                            </div>
+                        </div>
+
+                        <div style="margin: 15px 0;">
+                            <h4>4. On-Demand Allocation</h4>
+                            <p>Pages are allocated only when needed, not upfront.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <h3>🎯 Why This Eliminates Fragmentation</h3>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li><strong>Fixed-size blocks:</strong> Any free page can be used for any request</li>
+                        <li><strong>Non-contiguous physical storage:</strong> A process's "contiguous" virtual memory can use scattered physical pages</li>
+                        <li><strong>No wasted space:</strong> Internal fragmentation is limited to the last page only</li>
+                        <li><strong>Flexible allocation:</strong> Allocate/deallocate pages dynamically</li>
+                    </ul>
+
+                    <p style="margin-top: 15px; font-weight: 600;">Key insight: Physical memory doesn't need to be contiguous if we have a mapping layer!</p>
+                </div>
+            </div>
+
+            <div class="interactive-box">
+                <h3>Visual Example: OS Paging</h3>
+                <div class="side-by-side">
+                    <div>
+                        <h4 style="text-align: center; color: #667eea;">Virtual Address Space (Process View)</h4>
+                        <div style="background: white; padding: 20px; border-radius: 8px;">
+                            <p style="text-align: center; font-size: 0.9em; color: #666; margin-bottom: 10px;">Contiguous and simple</p>
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; text-align: center;">Virtual Page 0 (0-4KB)</div>
+                                <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; text-align: center;">Virtual Page 1 (4-8KB)</div>
+                                <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; text-align: center;">Virtual Page 2 (8-12KB)</div>
+                                <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; text-align: center;">Virtual Page 3 (12-16KB)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 style="text-align: center; color: #764ba2;">Physical Memory (Reality)</h4>
+                        <div style="background: white; padding: 20px; border-radius: 8px;">
+                            <p style="text-align: center; font-size: 0.9em; color: #666; margin-bottom: 10px;">Non-contiguous and fragmented</p>
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <div style="background: #e9ecef; padding: 15px; color: #adb5bd; border-radius: 4px; text-align: center;">Frame 0 (Free)</div>
+                                <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; text-align: center;">Frame 1 → V-Page 3</div>
+                                <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; text-align: center;">Frame 2 → V-Page 1</div>
+                                <div style="background: #e9ecef; padding: 15px; color: #adb5bd; border-radius: 4px; text-align: center;">Frame 3 (Free)</div>
+                                <div style="background: #e9ecef; padding: 15px; color: #adb5bd; border-radius: 4px; text-align: center;">Frame 4 (Free)</div>
+                                <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; text-align: center;">Frame 5 → V-Page 0</div>
+                                <div style="background: #e9ecef; padding: 15px; color: #adb5bd; border-radius: 4px; text-align: center;">Frame 6 (Free)</div>
+                                <div style="background: #e9ecef; padding: 15px; color: #adb5bd; border-radius: 4px; text-align: center;">Frame 7 (Free)</div>
+                                <div style="background: #e9ecef; padding: 15px; color: #adb5bd; border-radius: 4px; text-align: center;">Frame 8 (Free)</div>
+                                <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; text-align: center;">Frame 9 → V-Page 2</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p style="text-align: center; margin-top: 20px; font-size: 1.1em; font-weight: 600; color: #667eea;">
+                    The process sees contiguous memory, but physical frames are scattered → No fragmentation!
+                </p>
+            </div>
+        </div>
+
+        <!-- Section 3: PagedAttention Explained -->
+        <div class="section">
+            <h2>🚀 Part 3: PagedAttention - Applying Paging to KV Cache</h2>
+            <p>vLLM applies the exact same paging concept to KV cache management. Brilliant!</p>
+
+            <div class="interactive-box">
+                <h3>The Core Idea</h3>
+                <div class="highlight-box">
+                    <p style="font-size: 1.1em; line-height: 1.8;">
+                        Instead of storing KV cache for each request in <strong>contiguous GPU memory</strong>,
+                        divide the KV cache into <strong>fixed-size blocks</strong> (like OS pages) and store them
+                        in <strong>non-contiguous</strong> locations, using a <strong>block table</strong> (like page table) to track them.
+                    </p>
+                </div>
+
+                <div style="margin: 30px 0;">
+                    <h4 style="color: #667eea;">Key Components:</h4>
+
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>OS Paging</th>
+                                <th>PagedAttention</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Page</strong></td>
+                                <td><strong>Block</strong></td>
+                                <td>Fixed-size unit (e.g., 16 tokens)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Virtual Address</strong></td>
+                                <td><strong>Logical Block ID</strong></td>
+                                <td>Sequential identifier (Block 0, 1, 2...)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Physical Frame</strong></td>
+                                <td><strong>Physical Block</strong></td>
+                                <td>Actual GPU memory location</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Page Table</strong></td>
+                                <td><strong>Block Table</strong></td>
+                                <td>Maps logical blocks to physical blocks</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Process</strong></td>
+                                <td><strong>Request/Sequence</strong></td>
+                                <td>Each has its own mapping</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin: 30px 0;">
+                    <h4 style="color: #667eea;">Block Structure</h4>
+                    <p>Each block stores KV cache for a fixed number of tokens across all layers.</p>
+
+                    <div class="formula">
+                        Block (16 tokens) = {<br>
+                        &nbsp;&nbsp;For each layer (e.g., 40 layers) {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;For each token (0-15) {<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Key vectors (all attention heads)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value vectors (all attention heads)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        &nbsp;&nbsp;}<br>
+                        }
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>Block Size Example (Llama 2 13B, 16 tokens/block)</h4>
+                        <div class="formula">
+                            Block_size = tokens_per_block × cache_per_token<br>
+                            = 16 × 819,200 bytes<br>
+                            = 13,107,200 bytes<br>
+                            ≈ <strong>12.5 MB per block</strong>
+                        </div>
+                        <p>Common block sizes: 8, 16, or 32 tokens per block</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="interactive-box">
+                <h3>How It Works: Step-by-Step Example</h3>
+                <p>Let's walk through a complete example with actual block allocation.</p>
+
+                <div style="margin: 25px 0; background: white; padding: 20px; border-radius: 8px;">
+                    <h4>Scenario: User asks "Explain quantum computing in simple terms"</h4>
+                    <p style="color: #666; font-size: 0.9em;">Assume 16 tokens per block</p>
+
+                    <div class="timeline-viz">
+                        <div class="timeline-step">
+                            <h4 style="color: #667eea;">Step 1: Prompt Processing</h4>
+                            <p><strong>Input:</strong> "Explain quantum computing in simple terms" = 7 tokens</p>
+                            <p><strong>Blocks needed:</strong> 7 tokens ÷ 16 tokens/block = 1 block (partially filled)</p>
+
+                            <div style="margin: 15px 0;">
+                                <p style="font-weight: 600;">Logical View (Request's perspective):</p>
+                                <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; display: inline-block; margin: 5px;">
+                                    Logical Block 0 [7/16 tokens used]
+                                </div>
+                            </div>
+
+                            <div style="margin: 15px 0;">
+                                <p style="font-weight: 600;">Physical Allocation:</p>
+                                <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; display: inline-block; margin: 5px;">
+                                    Physical Block 5
+                                </div>
+                            </div>
+
+                            <div style="margin: 15px 0;">
+                                <p style="font-weight: 600;">Block Table:</p>
+                                <div class="page-table">
+                                    <div class="page-table-row header">
+                                        <div>Logical Block</div>
+                                        <div>Physical Block</div>
+                                        <div>Tokens Used</div>
+                                    </div>
+                                    <div class="page-table-row">
+                                        <div>0</div>
+                                        <div>5</div>
+                                        <div>7/16</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-step">
+                            <h4 style="color: #667eea;">Step 2: Generate Tokens</h4>
+                            <p>Model generates: "Quantum computing uses qubits..." (12 more tokens)</p>
+                            <p><strong>Total tokens now:</strong> 7 + 12 = 19 tokens</p>
+                            <p><strong>Blocks needed:</strong> 2 blocks (19 ÷ 16)</p>
+
+                            <div style="margin: 15px 0;">
+                                <p style="font-weight: 600;">Logical View:</p>
+                                <div style="display: flex; gap: 10px; margin: 10px 0;">
+                                    <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; flex: 1; text-align: center;">
+                                        Logical Block 0<br>[16/16 tokens]<br>FULL
+                                    </div>
+                                    <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; flex: 1; text-align: center;">
+                                        Logical Block 1<br>[3/16 tokens]<br>PARTIAL
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin: 15px 0;">
+                                <p style="font-weight: 600;">Physical Allocation (non-contiguous!):</p>
+                                <div style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+                                    <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; text-align: center;">
+                                        Physical Block 5
+                                    </div>
+                                    <div style="color: #667eea; font-size: 2em; display: flex; align-items: center;">→</div>
+                                    <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; text-align: center;">
+                                        Physical Block 12<br><span style="font-size: 0.8em;">(not adjacent!)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin: 15px 0;">
+                                <p style="font-weight: 600;">Block Table:</p>
+                                <div class="page-table">
+                                    <div class="page-table-row header">
+                                        <div>Logical Block</div>
+                                        <div>Physical Block</div>
+                                        <div>Tokens Used</div>
+                                    </div>
+                                    <div class="page-table-row">
+                                        <div>0</div>
+                                        <div>5</div>
+                                        <div>16/16</div>
+                                    </div>
+                                    <div class="page-table-row">
+                                        <div>1</div>
+                                        <div>12</div>
+                                        <div>3/16</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="highlight-box">
+                                <strong>✅ Key Point:</strong> Physical blocks 5 and 12 are NOT adjacent in GPU memory,
+                                but the request sees them as contiguous logical blocks 0 and 1!
+                            </div>
+                        </div>
+
+                        <div class="timeline-step">
+                            <h4 style="color: #667eea;">Step 3: Continue Generating</h4>
+                            <p>As more tokens are generated, allocate new blocks only when current block fills up.</p>
+                            <p><strong>Total: 50 tokens generated</strong></p>
+                            <p><strong>Blocks needed:</strong> ⌈50 ÷ 16⌉ = 4 blocks</p>
+
+                            <div style="margin: 15px 0;">
+                                <p style="font-weight: 600;">Logical View:</p>
+                                <div style="display: flex; gap: 10px; margin: 10px 0;">
+                                    <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; flex: 1; text-align: center; font-size: 0.9em;">
+                                        Block 0<br>[16/16]
+                                    </div>
+                                    <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; flex: 1; text-align: center; font-size: 0.9em;">
+                                        Block 1<br>[16/16]
+                                    </div>
+                                    <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; flex: 1; text-align: center; font-size: 0.9em;">
+                                        Block 2<br>[16/16]
+                                    </div>
+                                    <div style="background: #667eea; padding: 15px; color: white; border-radius: 4px; flex: 1; text-align: center; font-size: 0.9em;">
+                                        Block 3<br>[2/16]
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin: 15px 0;">
+                                <p style="font-weight: 600;">Physical Allocation (completely scattered!):</p>
+                                <div style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+                                    <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; text-align: center; font-size: 0.9em;">
+                                        Phys. 5
+                                    </div>
+                                    <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; text-align: center; font-size: 0.9em;">
+                                        Phys. 12
+                                    </div>
+                                    <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; text-align: center; font-size: 0.9em;">
+                                        Phys. 3
+                                    </div>
+                                    <div style="background: #764ba2; padding: 15px; color: white; border-radius: 4px; text-align: center; font-size: 0.9em;">
+                                        Phys. 22
+                                    </div>
+                                </div>
+                                <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                                    Notice: 5, 12, 3, 22 - completely non-contiguous in physical GPU memory!
+                                </p>
+                            </div>
+
+                            <div style="margin: 15px 0;">
+                                <p style="font-weight: 600;">Block Table:</p>
+                                <div class="page-table">
+                                    <div class="page-table-row header">
+                                        <div>Logical Block</div>
+                                        <div>Physical Block</div>
+                                        <div>Tokens Used</div>
+                                    </div>
+                                    <div class="page-table-row">
+                                        <div>0</div>
+                                        <div>5</div>
+                                        <div>16/16</div>
+                                    </div>
+                                    <div class="page-table-row">
+                                        <div>1</div>
+                                        <div>12</div>
+                                        <div>16/16</div>
+                                    </div>
+                                    <div class="page-table-row">
+                                        <div>2</div>
+                                        <div>3</div>
+                                        <div>16/16</div>
+                                    </div>
+                                    <div class="page-table-row">
+                                        <div>3</div>
+                                        <div>22</div>
+                                        <div>2/16</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="timeline-step">
+                            <h4 style="color: #667eea;">Step 4: Request Completes</h4>
+                            <p>When the request finishes, all blocks are returned to the free pool.</p>
+                            <p>These blocks can now be used by ANY other request - no fragmentation!</p>
+
+                            <div class="highlight-box">
+                                <h4>🎯 The Magic:</h4>
+                                <ul style="margin-left: 20px; line-height: 1.8;">
+                                    <li>✅ No pre-allocation: Blocks allocated on-demand</li>
+                                    <li>✅ No fragmentation: Any free block can serve any request</li>
+                                    <li>✅ Efficient memory use: Only allocate what's actually needed</li>
+                                    <li>✅ Easy deallocation: Just mark blocks as free in the pool</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Interactive Simulator -->
+        <div class="section">
+            <h2>🎮 Part 4: Interactive PagedAttention Simulator</h2>
+            <p>See PagedAttention in action! Add requests and watch how blocks are allocated.</p>
+
+            <div class="interactive-box">
+                <div class="animation-controls">
+                    <h3>Controls</h3>
+                    <div class="controls">
+                        <label>Tokens per Block:</label>
+                        <select id="blockSize">
+                            <option value="8">8 tokens</option>
+                            <option value="16" selected>16 tokens</option>
+                            <option value="32">32 tokens</option>
+                        </select>
+
+                        <label>Total GPU Blocks:</label>
+                        <input type="number" id="totalBlocks" value="100" min="50" max="200">
+                    </div>
+
+                    <div class="controls" style="margin-top: 15px;">
+                        <button onclick="addRequest('short')">➕ Add Short Request (20-40 tokens)</button>
+                        <button onclick="addRequest('medium')">➕ Add Medium Request (50-100 tokens)</button>
+                        <button onclick="addRequest('long')">➕ Add Long Request (100-200 tokens)</button>
+                        <button class="secondary" onclick="removeOldestRequest()">❌ Remove Oldest Request</button>
+                        <button class="secondary" onclick="resetSimulator()">🔄 Reset</button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Blocks</div>
+                        <div class="stat-value" id="statTotal">100</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Used Blocks</div>
+                        <div class="stat-value" id="statUsed">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Free Blocks</div>
+                        <div class="stat-value good" id="statFree">100</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Memory Efficiency</div>
+                        <div class="stat-value good" id="statEfficiency">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Requests</div>
+                        <div class="stat-value" id="statRequests">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Wasted Space</div>
+                        <div class="stat-value good" id="statWasted">0</div>
+                    </div>
+                </div>
+
+                <h3>Physical GPU Memory (Block Pool)</h3>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #e9ecef;"></div>
+                        <span>Free Block</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                        <span>Allocated Block</span>
+                    </div>
+                </div>
+                <div class="memory-grid" id="physicalMemory"></div>
+
+                <h3>Active Requests</h3>
+                <div id="requestsList"></div>
+            </div>
+        </div>
+
+        <!-- Section 5: Attention Computation -->
+        <div class="section">
+            <h2>🔍 Part 5: How Attention Works with Paged Blocks</h2>
+            <p>The critical question: How does the model perform attention when K,V are scattered across non-contiguous blocks?</p>
+
+            <div class="interactive-box">
+                <h3>The Challenge</h3>
+                <p>Traditional attention assumes KV cache is stored contiguously:</p>
+                <div class="code-example">
+<span class="comment"># Traditional attention (pseudo-code)</span>
+<span class="keyword">def</span> <span class="function">traditional_attention</span>(query, kv_cache):
+    <span class="comment"># kv_cache is a single contiguous tensor</span>
+    <span class="comment"># shape: [num_tokens, num_layers, num_heads, head_dim]</span>
+
+    keys = kv_cache[..., <span class="number">0</span>, :]      <span class="comment"># Extract all keys</span>
+    values = kv_cache[..., <span class="number">1</span>, :]    <span class="comment"># Extract all values</span>
+
+    <span class="comment"># Compute attention scores</span>
+    scores = query @ keys.T
+    weights = softmax(scores)
+    output = weights @ values
+
+    <span class="keyword">return</span> output
+                </div>
+
+                <div class="highlight-box">
+                    <strong>❌ Problem:</strong> With PagedAttention, keys and values are scattered across non-contiguous blocks!
+                    We need a different approach.
+                </div>
+            </div>
+
+            <div class="interactive-box">
+                <h3>PagedAttention's Solution</h3>
+                <p>Use the block table to gather K,V from non-contiguous blocks during attention computation.</p>
+
+                <div class="code-example">
+<span class="comment"># PagedAttention (simplified pseudo-code)</span>
+<span class="keyword">def</span> <span class="function">paged_attention</span>(query, block_table, physical_blocks):
+    <span class="comment"># block_table: maps logical blocks to physical blocks</span>
+    <span class="comment"># physical_blocks: actual GPU memory containing KV cache</span>
+
+    num_blocks = len(block_table)
+    outputs = []
+
+    <span class="comment"># Process each block</span>
+    <span class="keyword">for</span> logical_block_id <span class="keyword">in</span> range(num_blocks):
+        <span class="comment"># Look up physical block location</span>
+        physical_block_id = block_table[logical_block_id]
+
+        <span class="comment"># Fetch K,V from this physical block</span>
+        block_kv = physical_blocks[physical_block_id]
+        keys = block_kv[..., <span class="number">0</span>, :]
+        values = block_kv[..., <span class="number">1</span>, :]
+
+        <span class="comment"># Compute attention for this block</span>
+        scores = query @ keys.T
+        weights = softmax(scores)
+        block_output = weights @ values
+
+        outputs.append(block_output)
+
+    <span class="comment"># Combine outputs from all blocks</span>
+    final_output = <span class="function">combine</span>(outputs)
+
+    <span class="keyword">return</span> final_output
+                </div>
+
+                <div class="highlight-box">
+                    <h4>🎯 Key Insights:</h4>
+                    <ul style="margin-left: 20px; line-height: 1.8;">
+                        <li><strong>Indirect access:</strong> Use block_table[logical_id] → physical_id</li>
+                        <li><strong>Block-wise computation:</strong> Process attention one block at a time</li>
+                        <li><strong>Same result:</strong> Final output is mathematically identical to traditional approach</li>
+                        <li><strong>GPU kernel optimization:</strong> vLLM implements this efficiently in CUDA</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="interactive-box">
+                <h3>Performance Considerations</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Aspect</th>
+                            <th>Traditional</th>
+                            <th>PagedAttention</th>
+                            <th>Impact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Memory Access</strong></td>
+                            <td>Contiguous</td>
+                            <td>Indirect (via block table)</td>
+                            <td>Slight overhead (~3-5%)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Memory Efficiency</strong></td>
+                            <td>20-40%</td>
+                            <td>~90%</td>
+                            <td>2-3x better</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Batch Size</strong></td>
+                            <td>Small (8-16)</td>
+                            <td>Large (50-100+)</td>
+                            <td>3-6x more requests</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Throughput</strong></td>
+                            <td>Baseline</td>
+                            <td>10-20x higher</td>
+                            <td>Massive improvement</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="highlight-box">
+                    <h4>⚖️ The Trade-off</h4>
+                    <p>Small overhead (~3-5% slower per-request latency) in exchange for massive throughput gains (10-20x).</p>
+                    <p><strong>Why it works:</strong> The throughput gain from higher batch sizes far outweighs the small overhead.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 6: Advanced Features -->
+        <div class="section">
+            <h2>⚡ Part 6: Advanced PagedAttention Features</h2>
+
+            <div class="interactive-box">
+                <h3>1. Block Sharing for Parallel Sampling</h3>
+                <p>When generating multiple completions for the same prompt (beam search, parallel sampling), blocks can be shared!</p>
+
+                <div style="margin: 20px 0; background: white; padding: 20px; border-radius: 8px;">
+                    <h4>Scenario: Generate 3 different completions for the same prompt</h4>
+                    <p><strong>Prompt:</strong> "Once upon a time" (10 tokens = 1 block)</p>
+
+                    <div style="margin: 15px 0;">
+                        <h4 style="color: #667eea;">Traditional Approach:</h4>
+                        <p>Store 3 copies of the prompt KV cache</p>
+                        <div style="display: flex; gap: 10px; margin: 10px 0;">
+                            <div style="flex: 1;">
+                                <div style="background: #ff6b6b; padding: 10px; color: white; border-radius: 4px; text-align: center; margin-bottom: 5px;">
+                                    Completion 1
+                                </div>
+                                <div style="background: #764ba2; padding: 10px; color: white; border-radius: 4px; text-align: center;">
+                                    Prompt Block (copy 1)
+                                </div>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="background: #ff6b6b; padding: 10px; color: white; border-radius: 4px; text-align: center; margin-bottom: 5px;">
+                                    Completion 2
+                                </div>
+                                <div style="background: #764ba2; padding: 10px; color: white; border-radius: 4px; text-align: center;">
+                                    Prompt Block (copy 2)
+                                </div>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="background: #ff6b6b; padding: 10px; color: white; border-radius: 4px; text-align: center; margin-bottom: 5px;">
+                                    Completion 3
+                                </div>
+                                <div style="background: #764ba2; padding: 10px; color: white; border-radius: 4px; text-align: center;">
+                                    Prompt Block (copy 3)
+                                </div>
+                            </div>
+                        </div>
+                        <p style="color: #ff6b6b; font-weight: 600;">Total: 3 blocks for prompt + completion blocks = wasteful!</p>
+                    </div>
+
+                    <div style="margin: 25px 0;">
+                        <h4 style="color: #51cf66;">PagedAttention with Block Sharing:</h4>
+                        <p>All 3 completions point to the SAME physical prompt block</p>
+                        <div style="display: flex; gap: 10px; margin: 10px 0; align-items: flex-end;">
+                            <div style="flex: 1;">
+                                <div style="background: #51cf66; padding: 10px; color: white; border-radius: 4px; text-align: center; margin-bottom: 5px;">
+                                    Completion 1
+                                </div>
+                                <div style="background: #667eea; padding: 10px; color: white; border-radius: 4px; text-align: center;">
+                                    Gen Block 1
+                                </div>
+                                <div style="text-align: center; color: #667eea; font-size: 1.5em; margin: 5px 0;">↓</div>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="background: #51cf66; padding: 10px; color: white; border-radius: 4px; text-align: center; margin-bottom: 5px;">
+                                    Completion 2
+                                </div>
+                                <div style="background: #667eea; padding: 10px; color: white; border-radius: 4px; text-align: center;">
+                                    Gen Block 2
+                                </div>
+                                <div style="text-align: center; color: #667eea; font-size: 1.5em; margin: 5px 0;">↓</div>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="background: #51cf66; padding: 10px; color: white; border-radius: 4px; text-align: center; margin-bottom: 5px;">
+                                    Completion 3
+                                </div>
+                                <div style="background: #667eea; padding: 10px; color: white; border-radius: 4px; text-align: center;">
+                                    Gen Block 3
+                                </div>
+                                <div style="text-align: center; color: #667eea; font-size: 1.5em; margin: 5px 0;">↓</div>
+                            </div>
+                        </div>
+                        <div style="background: #764ba2; padding: 20px; color: white; border-radius: 4px; text-align: center; margin-top: 10px;">
+                            Shared Prompt Block (stored once!)
+                        </div>
+                        <p style="color: #51cf66; font-weight: 600; margin-top: 10px;">Total: 1 prompt block + 3 generation blocks = 2x memory savings!</p>
+                    </div>
+
+                    <div class="highlight-box">
+                        <h4>How It Works:</h4>
+                        <ul style="margin-left: 20px; line-height: 1.8;">
+                            <li>Prompt blocks are marked <strong>read-only</strong> with reference counting</li>
+                            <li>All completions' block tables point to the same physical prompt blocks</li>
+                            <li>Only the generated tokens need unique blocks per completion</li>
+                            <li>When all completions finish, reference count → 0, block freed</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="interactive-box">
+                <h3>2. Copy-on-Write for Beam Search</h3>
+                <p>When a beam branches, share blocks until they diverge, then copy only when needed.</p>
+
+                <div style="margin: 20px 0; background: white; padding: 20px; border-radius: 8px;">
+                    <h4>Beam Search Example:</h4>
+                    <p>2 beams share the same sequence until token 20, then diverge.</p>
+
+                    <div class="timeline-viz">
+                        <div class="timeline-step">
+                            <h4>Tokens 0-16: Both beams identical</h4>
+                            <p>Both beam block tables point to the same physical blocks (shared, read-only)</p>
+                        </div>
+                        <div class="timeline-step">
+                            <h4>Token 17-20: Still identical</h4>
+                            <p>Continue sharing blocks</p>
+                        </div>
+                        <div class="timeline-step">
+                            <h4>Token 21: Beams diverge!</h4>
+                            <p>Copy-on-write: Allocate new block only for the diverging beam, keep sharing previous blocks</p>
+                        </div>
+                    </div>
+
+                    <div class="highlight-box">
+                        <strong>Benefit:</strong> Only copy blocks when beams actually diverge, not upfront. Massive memory savings for beam search!
+                    </div>
+                </div>
+            </div>
+
+            <div class="interactive-box">
+                <h3>3. Dynamic Block Allocation</h3>
+                <p>Blocks are allocated on-demand as tokens are generated, not pre-allocated.</p>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Approach</th>
+                            <th>When Memory Allocated</th>
+                            <th>Amount Allocated</th>
+                            <th>Waste</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Traditional</strong></td>
+                            <td>At request start</td>
+                            <td>Max possible (e.g., 4096 tokens)</td>
+                            <td>60-80%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PagedAttention</strong></td>
+                            <td>As tokens generated</td>
+                            <td>One block at a time (e.g., 16 tokens)</td>
+                            <td>~5-10%*</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="font-size: 0.9em; color: #666; margin-top: 10px;">* Only the last block may be partially empty</p>
+            </div>
+        </div>
+
+        <!-- Section 7: Key Takeaways -->
+        <div class="section">
+            <h2>✅ Key Takeaways: Why PagedAttention Dominates</h2>
+
+            <div class="interactive-box">
+                <h3>The Core Innovations</h3>
+                <div style="display: grid; gap: 20px; margin: 20px 0;">
+                    <div style="background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #667eea;">
+                        <h4 style="color: #667eea;">1. Fixed-Size Blocks</h4>
+                        <p>Divide KV cache into fixed-size blocks (e.g., 16 tokens). Any free block can serve any request → no fragmentation.</p>
+                    </div>
+
+                    <div style="background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #667eea;">
+                        <h4 style="color: #667eea;">2. Block Table (Virtual Memory)</h4>
+                        <p>Map logical blocks (contiguous from request's view) to physical blocks (scattered in GPU memory). Enables non-contiguous storage.</p>
+                    </div>
+
+                    <div style="background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #667eea;">
+                        <h4 style="color: #667eea;">3. On-Demand Allocation</h4>
+                        <p>Allocate blocks only as tokens are generated, not upfront. No wasted pre-allocation.</p>
+                    </div>
+
+                    <div style="background: white; padding: 20px; border-radius: 8px; border-left: 5px solid #667eea;">
+                        <h4 style="color: #667eea;">4. Block Sharing</h4>
+                        <p>Multiple sequences can share read-only blocks (e.g., prompt blocks in parallel sampling). Massive memory savings.</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">The Results</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Traditional (HF)</th>
+                            <th>vLLM (PagedAttention)</th>
+                            <th>Improvement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Memory Efficiency</strong></td>
+                            <td>20-40%</td>
+                            <td>~90%</td>
+                            <td><span style="color: #51cf66; font-weight: 700;">2-3x</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Batch Size</strong></td>
+                            <td>8-16 requests</td>
+                            <td>50-100+ requests</td>
+                            <td><span style="color: #51cf66; font-weight: 700;">3-6x</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Throughput</strong></td>
+                            <td>Baseline</td>
+                            <td>10-20x higher</td>
+                            <td><span style="color: #51cf66; font-weight: 700;">10-20x</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Latency</strong></td>
+                            <td>Baseline</td>
+                            <td>~3-5% slower</td>
+                            <td><span style="color: #ff6b6b;">Slight overhead</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cost per Token</strong></td>
+                            <td>Baseline</td>
+                            <td>10-20x cheaper</td>
+                            <td><span style="color: #51cf66; font-weight: 700;">10-20x</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="highlight-box" style="margin-top: 30px;">
+                    <h3>🎯 The Bottom Line</h3>
+                    <p style="font-size: 1.1em; line-height: 1.8;">
+                        PagedAttention trades a tiny per-request latency overhead (3-5%) for massive throughput gains (10-20x).
+                        This makes vLLM the <strong>best open-source inference engine</strong> for production LLM serving
+                        where throughput and cost-efficiency matter more than single-request latency.
+                    </p>
+
+                    <p style="margin-top: 15px; font-size: 1.1em; line-height: 1.8;">
+                        By applying operating system virtual memory techniques to GPU memory management,
+                        vLLM achieves near-optimal memory utilization (~90%) and enables serving 10-20x more users
+                        on the same hardware.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 8: Next Steps -->
+        <div class="section">
+            <h2>🚀 What's Next?</h2>
+            <div class="interactive-box">
+                <h3>Now you understand:</h3>
+                <ul style="margin-left: 20px; line-height: 2;">
+                    <li>✅ What KV cache is and why it's the memory bottleneck</li>
+                    <li>✅ How traditional systems waste 60-80% of memory</li>
+                    <li>✅ How OS virtual memory paging works</li>
+                    <li>✅ How PagedAttention applies paging to KV cache</li>
+                    <li>✅ The block table and non-contiguous storage</li>
+                    <li>✅ Advanced features: block sharing, copy-on-write</li>
+                    <li>✅ Why vLLM achieves 10-20x better throughput</li>
+                </ul>
+
+                <h3 style="margin-top: 30px;">Other vLLM topics to explore:</h3>
+                <ul style="margin-left: 20px; line-height: 2;">
+                    <li>📊 Continuous batching (vs. static batching)</li>
+                    <li>⚡ CUDA kernel optimizations</li>
+                    <li>🔧 Scheduling algorithms (FCFS, priority-based)</li>
+                    <li>🎯 Prefix caching for repeated prompts</li>
+                    <li>🔄 Speculative decoding integration</li>
+                    <li>📡 Distributed inference across multiple GPUs</li>
+                    <li>🛠️ Model quantization support (AWQ, GPTQ, SqueezeLLM)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulator state
+        let simulator = {
+            totalBlocks: 100,
+            blockSize: 16,
+            requests: [],
+            physicalBlocks: [],
+            nextRequestId: 1,
+            colors: [
+                '#667eea', '#51cf66', '#ff6b6b', '#ffd93d', '#845ef7',
+                '#20c997', '#ff922b', '#fa5252', '#15aabf', '#82c91e'
+            ]
+        };
+
+        function initializeSimulator() {
+            const totalBlocks = parseInt(document.getElementById('totalBlocks').value);
+            simulator.totalBlocks = totalBlocks;
+            simulator.physicalBlocks = Array(totalBlocks).fill(null);
+            updateVisualization();
+        }
+
+        function addRequest(size) {
+            const blockSize = parseInt(document.getElementById('blockSize').value);
+            simulator.blockSize = blockSize;
+
+            let tokens;
+            if (size === 'short') {
+                tokens = Math.floor(Math.random() * 20) + 20; // 20-40
+            } else if (size === 'medium') {
+                tokens = Math.floor(Math.random() * 50) + 50; // 50-100
+            } else {
+                tokens = Math.floor(Math.random() * 100) + 100; // 100-200
+            }
+
+            const blocksNeeded = Math.ceil(tokens / blockSize);
+            const freeBlocks = simulator.physicalBlocks.filter(b => b === null).length;
+
+            if (blocksNeeded > freeBlocks) {
+                alert(`Not enough free blocks! Need ${blocksNeeded}, have ${freeBlocks}. Remove some requests first.`);
+                return;
+            }
+
+            const request = {
+                id: simulator.nextRequestId++,
+                tokens: tokens,
+                blocksNeeded: blocksNeeded,
+                blockIds: [],
+                color: simulator.colors[(simulator.nextRequestId - 2) % simulator.colors.length]
+            };
+
+            // Allocate blocks
+            let allocated = 0;
+            for (let i = 0; i < simulator.physicalBlocks.length && allocated < blocksNeeded; i++) {
+                if (simulator.physicalBlocks[i] === null) {
+                    simulator.physicalBlocks[i] = request.id;
+                    request.blockIds.push(i);
+                    allocated++;
+                }
+            }
+
+            simulator.requests.push(request);
+            updateVisualization();
+        }
+
+        function removeOldestRequest() {
+            if (simulator.requests.length === 0) {
+                alert('No requests to remove!');
+                return;
+            }
+
+            const request = simulator.requests.shift();
+
+            // Free blocks
+            for (let blockId of request.blockIds) {
+                simulator.physicalBlocks[blockId] = null;
+            }
+
+            updateVisualization();
+        }
+
+        function resetSimulator() {
+            simulator.requests = [];
+            simulator.physicalBlocks = Array(simulator.totalBlocks).fill(null);
+            simulator.nextRequestId = 1;
+            updateVisualization();
+        }
+
+        function updateVisualization() {
+            // Update stats
+            const usedBlocks = simulator.physicalBlocks.filter(b => b !== null).length;
+            const freeBlocks = simulator.totalBlocks - usedBlocks;
+
+            let totalTokens = 0;
+            let wastedTokens = 0;
+            simulator.requests.forEach(req => {
+                totalTokens += req.tokens;
+                const lastBlockTokens = req.tokens % simulator.blockSize;
+                if (lastBlockTokens > 0) {
+                    wastedTokens += (simulator.blockSize - lastBlockTokens);
+                }
+            });
+
+            const efficiency = totalTokens > 0 ? ((totalTokens / (usedBlocks * simulator.blockSize)) * 100).toFixed(1) : 0;
+
+            document.getElementById('statTotal').textContent = simulator.totalBlocks;
+            document.getElementById('statUsed').textContent = usedBlocks;
+            document.getElementById('statFree').textContent = freeBlocks;
+            document.getElementById('statEfficiency').textContent = efficiency + '%';
+            document.getElementById('statRequests').textContent = simulator.requests.length;
+            document.getElementById('statWasted').textContent = wastedTokens + ' tokens';
+
+            // Color stats
+            const efficiencyElem = document.getElementById('statEfficiency');
+            if (efficiency >= 80) {
+                efficiencyElem.className = 'stat-value good';
+            } else if (efficiency >= 60) {
+                efficiencyElem.className = 'stat-value';
+            } else {
+                efficiencyElem.className = 'stat-value bad';
+            }
+
+            // Update physical memory grid
+            const memoryGrid = document.getElementById('physicalMemory');
+            memoryGrid.innerHTML = '';
+            simulator.physicalBlocks.forEach((requestId, blockId) => {
+                const block = document.createElement('div');
+                block.className = 'memory-block';
+
+                if (requestId === null) {
+                    block.classList.add('free');
+                    block.textContent = blockId;
+                } else {
+                    block.classList.add('allocated');
+                    block.textContent = blockId;
+                    const request = simulator.requests.find(r => r.id === requestId);
+                    if (request) {
+                        block.style.background = request.color;
+                        block.title = `Block ${blockId} - Request ${requestId}`;
+                    }
+                }
+
+                memoryGrid.appendChild(block);
+            });
+
+            // Update requests list
+            const requestsList = document.getElementById('requestsList');
+            requestsList.innerHTML = '';
+
+            if (simulator.requests.length === 0) {
+                requestsList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No active requests. Add some requests to see block allocation!</p>';
+            } else {
+                simulator.requests.forEach(request => {
+                    const card = document.createElement('div');
+                    card.className = 'request-card';
+                    card.style.borderLeftColor = request.color;
+
+                    const lastBlockTokens = request.tokens % simulator.blockSize;
+                    const wastedInLastBlock = lastBlockTokens > 0 ? (simulator.blockSize - lastBlockTokens) : 0;
+
+                    card.innerHTML = `
+                        <div class="request-header">
+                            <div class="request-name">Request ${request.id}</div>
+                            <div style="color: ${request.color}; font-weight: 600;">${request.blocksNeeded} blocks</div>
+                        </div>
+                        <div class="request-info">Total tokens: ${request.tokens}</div>
+                        <div class="request-info">Block size: ${simulator.blockSize} tokens/block</div>
+                        <div class="request-info">Last block utilization: ${lastBlockTokens}/${simulator.blockSize} tokens ${wastedInLastBlock > 0 ? `(${wastedInLastBlock} wasted)` : '(full)'}</div>
+                        <div class="request-info" style="margin-top: 10px;"><strong>Physical blocks allocated:</strong></div>
+                        <div class="request-blocks">
+                            ${request.blockIds.map(id => `<span class="block-chip" style="background: ${request.color};">${id}</span>`).join('')}
+                        </div>
+                        <div class="request-info" style="margin-top: 10px; font-size: 0.85em; color: #666;">
+                            ${request.blockIds.length > 1 ? '⚡ Blocks are non-contiguous - no fragmentation!' : ''}
+                        </div>
+                    `;
+
+                    requestsList.appendChild(card);
+                });
+            }
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSimulator();
+        });
+
+        // Update when settings change
+        document.getElementById('totalBlocks').addEventListener('change', function() {
+            if (simulator.requests.length > 0) {
+                if (!confirm('Changing total blocks will reset the simulator. Continue?')) {
+                    this.value = simulator.totalBlocks;
+                    return;
+                }
+            }
+            initializeSimulator();
+        });
+    </script>
+</body>
+</html>
