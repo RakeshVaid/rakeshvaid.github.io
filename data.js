@@ -39,6 +39,7 @@ const PORTFOLIO_DATA = {
             content: {
                 type: "timeline",
                 items: [
+                    { date: "May 2026", text: 'Reviewer, <a href="https://sites.google.com/view/icml-ctb/home" target="_blank">CTB@ICML</a>' },
                     { date: "Dec 2025", text: 'Launched <a href="https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models" target="_blank">Amazon Nova 2: Multimodal reasoning and generation models</a> (Nova 2 - Lite, Pro, Omni, Sonic)' },
                     { date: "Sep 2025", text: 'Reviewer, <a href="https://aaai.org/conference/aaai/aaai-26/" target="_blank">AAAI 2026</a>' },
                     { date: "May 2025", text: 'Launched <a href="https://www.amazon.science/publications/amazon-nova-premier-technical-report-and-model-card" target="_blank">Amazon Nova Premier</a>, our most capable multimodal foundation model and teacher model for distillation' },
