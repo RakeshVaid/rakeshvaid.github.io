@@ -2,7 +2,7 @@ const PORTFOLIO_DATA = {
     name: "Rakesh Vaideeswaran",
     role: "Applied Scientist II &middot; Amazon AGI",
     email: "rakeshvaideeswaran.nitt@gmail.com",
-    footer: 'Built with <a href="https://code.claude.com/docs/en/overview" target="_blank">Claude Code</a> · Last updated May 2026',
+    footer: 'Built with <a href="https://code.claude.com/docs/en/overview" target="_blank">Claude Code</a> · Last updated July 2026',
     links: {
         scholar: "https://scholar.google.com/citations?user=r8i2rq8AAAAJ&hl=en",
         linkedin: "https://www.linkedin.com/in/rakeshmahesh/",
@@ -39,7 +39,8 @@ const PORTFOLIO_DATA = {
             content: {
                 type: "timeline",
                 items: [
-                    { date: "May 2026", text: 'Reviewer, <a href="https://sites.google.com/view/icml-ctb/home" target="_blank">CTB@ICML</a>' },
+                    { date: "July 2026", text: 'Project <a href="https://openreview.net/pdf?id=SJykq9Kdt6" target="_blank">Stress Tests REVEAL Fragile Temporal and Visual Grounding in Video-Language Models</a> accepted at two workshops at ICML 2026 (<a href="https://sites.google.com/view/icml-ctb/home" target="_blank">1. Combining Theory and Benchmarks</a>, <a href="https://mechinterpworkshop.com/" target="_blank">2. Mechanistic Interpretability workshop</a>' },
+                    { date: "May 2026", text: 'Reviewer, <a href="https://sites.google.com/view/icml-ctb/home" target="_blank">CTB@ICML</a> & <a href="https://mechinterpworkshop.com/" target="_blank">Mechanistic Interpretability Workshop@ICML</a>' },
                     { date: "Dec 2025", text: 'Launched <a href="https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models" target="_blank">Amazon Nova 2: Multimodal reasoning and generation models</a> (Nova 2 - Lite, Pro, Omni, Sonic)' },
                     { date: "Sep 2025", text: 'Reviewer, <a href="https://aaai.org/conference/aaai/aaai-26/" target="_blank">AAAI 2026</a>' },
                     { date: "May 2025", text: 'Launched <a href="https://www.amazon.science/publications/amazon-nova-premier-technical-report-and-model-card" target="_blank">Amazon Nova Premier</a>, our most capable multimodal foundation model and teacher model for distillation' },
@@ -199,6 +200,14 @@ const PORTFOLIO_DATA = {
                 type: "publications",
                 scholarNote: 'Full list on <a href="https://scholar.google.com/citations?user=r8i2rq8AAAAJ&hl=en" target="_blank">Google Scholar</a> (* denotes equal contribution)',
                 items: [
+                    {
+                        title: "Stress Tests REVEAL Fragile Temporal and Visual Grounding in Video-Language Models",
+                        url: "https://openreview.net/pdf?id=SJykq9Kdt6",
+                        authors: 'Sethuraman TV, Savya Khosla, Aditi Tiwari, Vidya Ganesh, Rakshana Jayaprakash, Aditya Jain, Vignesh Srinivasakumar, Onkar Kishor Susladkar, Joey Wang, Srinidhi Sunkara, Aditya Shanmugham, Abbaas Alif Mohamed Nishar, <span class="me">Rakesh Vaideeswaran</span>, Simon Jenni, Derek Hoiem',
+                        venue: '<a href="https://sites.google.com/view/icml-ctb/home" target="_blank">1. Combining Theory and Benchmarks: Towards A Virtuous Cycle to Understand and Guarantee Foundation Model Performance</a><br><a href="https://mechinterpworkshop.com/" target="_blank">2. Mechanistic Interpretability Workshop</a>',
+                        thumb: "figures/reveal_teaser.png",
+                        press: []
+                    },
                     {
                         title: "Amazon Nova 2: Multimodal reasoning and generation models",
                         url: "https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models",
