@@ -207,7 +207,8 @@ const PORTFOLIO_DATA = {
                         venue: '<a href="https://sites.google.com/view/icml-ctb/home" target="_blank">1. Combining Theory and Benchmarks: Towards A Virtuous Cycle to Understand and Guarantee Foundation Model Performance</a><br><a href="https://mechinterpworkshop.com/" target="_blank">2. Mechanistic Interpretability Workshop</a>',
                         thumb: "figures/reveal_teaser.png",
                         press: [
-                            { label: "Poster (Presented @ ICML)", url: "https://mechinterpworkshop.com/poster-pdfs/800.pdf" }
+                            { label: "Poster (Presented @ ICML)", url: "https://mechinterpworkshop.com/poster-pdfs/800.pdf" },
+                            { label: "Amazon Science", url: "https://www.amazon.science/publications/stress-tests-reveal-fragile-temporal-and-visual-grounding-in-video-language-models" }
                         ]
                     },
                     {
