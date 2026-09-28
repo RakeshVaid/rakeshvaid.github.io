@@ -2,7 +2,7 @@ const PORTFOLIO_DATA = {
     name: "Rakesh Vaideeswaran",
     role: "Applied Scientist II &middot; Amazon AGI",
     email: "rakeshvaideeswaran.nitt@gmail.com",
-    footer: 'Built with <a href="https://code.claude.com/docs/en/overview" target="_blank">Claude Code</a> · Last updated July 2026',
+    footer: 'Built with <a href="https://code.claude.com/docs/en/overview" target="_blank">Claude Code</a> · Last updated September 2026',
     links: {
         scholar: "https://scholar.google.com/citations?user=r8i2rq8AAAAJ&hl=en",
         linkedin: "https://www.linkedin.com/in/rakeshmahesh/",
@@ -39,7 +39,8 @@ const PORTFOLIO_DATA = {
             content: {
                 type: "timeline",
                 items: [
-                    { date: "July 2026", text: 'Project <a href="https://openreview.net/pdf?id=SJykq9Kdt6" target="_blank">Stress Tests REVEAL Fragile Temporal and Visual Grounding in Video-Language Models</a> accepted at two workshops at ICML 2026 – <a href="https://sites.google.com/view/icml-ctb/home" target="_blank">1) Combining Theory and Benchmarks</a>, <a href="https://mechinterpworkshop.com/" target="_blank">2) Mechanistic Interpretability workshop</a>' },
+                    { date: "Sep 2026", text: 'Project <a href="https://listqa.github.io" target="_blank">ListQA: A Benchmark for Evaluating List-Formatted Factual Knowledge Retrieval in Large Language Models</a> accepted at NeurIPS 2026 - Evaluations & Datasets Track' },
+                    { date: "July 2026", text: 'Project <a href="https://arxiv.org/pdf/2602.11244" target="_blank">Stress Tests REVEAL Fragile Temporal and Visual Grounding in Video-Language Models</a> accepted at two workshops at ICML 2026 – <a href="https://sites.google.com/view/icml-ctb/home" target="_blank">1) Combining Theory and Benchmarks</a>, <a href="https://mechinterpworkshop.com/" target="_blank">2) Mechanistic Interpretability workshop</a>' },
                     { date: "May 2026", text: 'Reviewer, <a href="https://sites.google.com/view/icml-ctb/home" target="_blank">CTB@ICML</a> & <a href="https://mechinterpworkshop.com/" target="_blank">Mechanistic Interpretability Workshop@ICML</a>' },
                     { date: "Dec 2025", text: 'Launched <a href="https://www.amazon.science/publications/amazon-nova-2-multimodal-reasoning-and-generation-models" target="_blank">Amazon Nova 2: Multimodal reasoning and generation models</a> (Nova 2 - Lite, Pro, Omni, Sonic)' },
                     { date: "Sep 2025", text: 'Reviewer, <a href="https://aaai.org/conference/aaai/aaai-26/" target="_blank">AAAI 2026</a>' },
@@ -107,7 +108,8 @@ const PORTFOLIO_DATA = {
                                 date: "Dec 2023 - Present",
                                 bullets: [
                                     "Building Nova Family of Foundation Models",
-                                    "Working on enhancing reasoning capabilities in multimodal foundation models"
+                                    "Working on enhancing reasoning capabilities in multimodal foundation models",
+                                    "Developing Agentic RL Environments/Gyms"
                                 ]
                             },
                             {
