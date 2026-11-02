@@ -203,8 +203,20 @@ const PORTFOLIO_DATA = {
                 scholarNote: 'Full list on <a href="https://scholar.google.com/citations?user=r8i2rq8AAAAJ&hl=en" target="_blank">Google Scholar</a> (* denotes equal contribution)',
                 items: [
                     {
+                        title: "ListQA: A Benchmark for Evaluating List-Formatted Factual Knowledge Retrieval in Large Language Models",
+                        url: "https://arxiv.org/pdf/2610.19165",
+                        authors: 'Mayank Kulkarni*, <span class="me">Rakesh Vaideeswaran*</span>',
+                        venue: '<a href="https://neurips.cc/" target="_blank">NeurIPS 2026, Evaluations & Datasets Track</a>',
+                        thumb: "figures/listqa_stats.png",
+                        press: [
+                            { label: "Project Page", url: "https://listqa.github.io/" },
+                            { label: "Data", url: "https://huggingface.co/datasets/AmazonScience/ListQA" },
+                            { label: "Code", url: "https://github.com/amazon-science/ListQA-Eval" },
+                        ]
+                    },
+                    {
                         title: "Stress Tests REVEAL Fragile Temporal and Visual Grounding in Video-Language Models",
-                        url: "https://openreview.net/pdf?id=SJykq9Kdt6",
+                        url: "https://arxiv.org/pdf/2602.11244",
                         authors: 'Sethuraman TV, Savya Khosla, Aditi Tiwari, Vidya Ganesh, Rakshana Jayaprakash, Aditya Jain, Vignesh Srinivasakumar, Onkar Kishor Susladkar, Joey Wang, Srinidhi Sunkara, Aditya Shanmugham, Abbaas Alif Mohamed Nishar, <span class="me">Rakesh Vaideeswaran</span>, Simon Jenni, Derek Hoiem',
                         venue: '<a href="https://sites.google.com/view/icml-ctb/home" target="_blank">1. Combining Theory and Benchmarks: Towards A Virtuous Cycle to Understand and Guarantee Foundation Model Performance</a><br><a href="https://mechinterpworkshop.com/" target="_blank">2. Mechanistic Interpretability Workshop</a>',
                         thumb: "figures/reveal_teaser.png",
